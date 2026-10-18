@@ -82,7 +82,7 @@ export function TypingArea({
     <div className="typing-screen">
       <header className="typing-header">
         <button className="link" onClick={onExit}>
-          ← {da.toMap}
+          ← {da.back}
         </button>
         <div className="typing-title">
           <h2>{title}</h2>

@@ -2,12 +2,14 @@ import { useState } from 'react'
 import type { Thresholds } from '../config'
 import type { SpeedUnit } from '../format'
 import { da } from '../i18n/da'
-import { speedUnitOf, type Profile } from '../storage/profiles'
+import { dailyGoalOf, speedUnitOf, type Profile } from '../storage/profiles'
+
+type Prefs = { speedUnit: SpeedUnit; dailyGoalMinutes: number }
 
 interface Props {
   profiles: Profile[]
   initialProfileId: string | null
-  onSave: (id: string, settings: Thresholds, speedUnit: SpeedUnit) => void
+  onSave: (id: string, settings: Thresholds, prefs: Prefs) => void
   onReset: (id: string) => void
   onDelete: (id: string) => void
   onBack: () => void
@@ -41,7 +43,7 @@ export function ParentSettings({ profiles, initialProfileId, onSave, onReset, on
               ))}
             </select>
           </label>
-          <ThresholdForm key={profile.id} profile={profile} onSave={(s, unit) => onSave(profile.id, s, unit)} />
+          <ThresholdForm key={profile.id} profile={profile} onSave={(s, prefs) => onSave(profile.id, s, prefs)} />
           <div className="actions danger-zone">
             <button
               className="secondary"
@@ -67,12 +69,13 @@ function ThresholdForm({
   onSave,
 }: {
   profile: Profile
-  onSave: (s: Thresholds, unit: SpeedUnit) => void
+  onSave: (s: Thresholds, prefs: Prefs) => void
 }) {
   const [accuracy, setAccuracy] = useState(Math.round(profile.settings.minAccuracy * 100))
   const [baseKpm, setBaseKpm] = useState(profile.settings.baseKpm)
   const [step, setStep] = useState(profile.settings.kpmStepPerModule)
   const [unit, setUnit] = useState<SpeedUnit>(speedUnitOf(profile))
+  const [goal, setGoal] = useState(dailyGoalOf(profile))
   const [saved, setSaved] = useState(false)
 
   return (
@@ -80,7 +83,7 @@ function ThresholdForm({
       className="settings-form"
       onSubmit={(e) => {
         e.preventDefault()
-        onSave({ minAccuracy: accuracy / 100, baseKpm, kpmStepPerModule: step }, unit)
+        onSave({ minAccuracy: accuracy / 100, baseKpm, kpmStepPerModule: step }, { speedUnit: unit, dailyGoalMinutes: goal })
         setSaved(true)
       }}
       onChange={() => setSaved(false)}
@@ -103,6 +106,10 @@ function ThresholdForm({
           <option value="kpm">{da.speedUnits.kpm}</option>
           <option value="kps">{da.speedUnits.kps}</option>
         </select>
+      </label>
+      <label>
+        {da.dailyGoalSetting}
+        <input type="number" min={0} max={120} value={goal} onChange={(e) => setGoal(+e.target.value)} />
       </label>
       <div className="actions">
         <button type="submit">{da.save}</button>

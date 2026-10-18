@@ -4,7 +4,9 @@ import { difficulty, lix } from '../content/lix'
 import type { SessionResult } from '../engine/stats'
 import { formatSpeed, pct, speedUnitLabel, type SpeedUnit } from '../format'
 import { da } from '../i18n/da'
+import type { Achievement } from '../progress/achievements'
 import { leaderboard, speedUnitOf, type Profile } from '../storage/profiles'
+import { NewAchievements } from './Achievements'
 
 const LENGTHS: StoryLength[] = [1, 2, 3]
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -61,7 +63,7 @@ export function StoryPicker({ profiles, profile, initial, onStart, onBack }: Pic
     <div className="stories">
       <header className="typing-header">
         <button className="link" onClick={onBack}>
-          ← {da.toMap}
+          ← {da.toHome}
         </button>
         <h2>{da.stories}</h2>
         <span />
@@ -126,9 +128,10 @@ interface ResultProps {
   result: SessionResult
   points: number
   isRecord: boolean
+  unlocked: Achievement[]
   onRetry: () => void
   onOther: () => void
-  onMap: () => void
+  onHome: () => void
 }
 
 export function StoryResult(p: ResultProps) {
@@ -153,6 +156,7 @@ export function StoryResult(p: ResultProps) {
         )}
         {rank > 0 && <div className="rank">{da.rank(rank)}</div>}
       </div>
+      <NewAchievements items={p.unlocked} />
       <div className="stat-row">
         <div className="stat">
           <div className="stat-label">{da.speed}</div>
@@ -171,8 +175,8 @@ export function StoryResult(p: ResultProps) {
           ↺ {da.tryAgain}
         </button>
         <button onClick={p.onOther}>{da.otherStory}</button>
-        <button className="link" onClick={p.onMap}>
-          {da.toMap}
+        <button className="link" onClick={p.onHome}>
+          {da.toHome}
         </button>
       </div>
     </div>

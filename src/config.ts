@@ -32,6 +32,9 @@ export const STARS = {
   three: { accuracy: 0.98, speedFactor: 1.5 },
 }
 
+/** Default daily goal in minutes of typing. Parents can change it per profile. */
+export const DAILY_GOAL_MINUTES = 10
+
 /** Failed attempts in a row before a warm-up drill is suggested. */
 export const FAILS_BEFORE_WARMUP = 3
 

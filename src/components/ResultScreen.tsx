@@ -3,7 +3,9 @@ import { FAILS_BEFORE_WARMUP } from '../config'
 import { weakKeys, type SessionResult } from '../engine/stats'
 import { formatSpeed, formatSpeedDiff, pct, speedUnitLabel, type SpeedUnit } from '../format'
 import { da } from '../i18n/da'
+import type { Achievement } from '../progress/achievements'
 import type { ExerciseRecord } from '../storage/profiles'
+import { NewAchievements } from './Achievements'
 
 interface Props {
   result: SessionResult
@@ -18,6 +20,8 @@ interface Props {
   /** The record before this attempt, for comparison. */
   previous?: ExerciseRecord
   failsInRow: number
+  /** Achievements this attempt unlocked. */
+  unlocked: Achievement[]
   /** Shown when a module test is passed. */
   commonWords?: { count: number; total: number; examples: string[] }
   hasNext: boolean
@@ -60,7 +64,7 @@ export function ResultScreen(p: Props) {
   }, [passed, p])
 
   return (
-    <div className={`result ${p.isTest && passed ? 'celebrate' : ''}`}>
+    <div className={`result ${(p.isTest && passed) || p.unlocked.length > 0 ? 'celebrate' : ''}`}>
       <h2>{title}</h2>
       {!p.isWarmup && (
         <div className="stars" aria-label={da.stars(p.stars)}>
@@ -71,6 +75,8 @@ export function ResultScreen(p: Props) {
           ))}
         </div>
       )}
+
+      <NewAchievements items={p.unlocked} />
 
       {p.commonWords && (
         <div className="common-words">

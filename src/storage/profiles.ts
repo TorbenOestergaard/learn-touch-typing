@@ -1,7 +1,7 @@
 // Local profiles and progress, stored in localStorage. Versioned so it can migrate
 // to a backend later.
 
-import { DEFAULT_THRESHOLDS, EXERCISES_PER_MODULE, type Thresholds } from '../config'
+import { DAILY_GOAL_MINUTES, DEFAULT_THRESHOLDS, EXERCISES_PER_MODULE, type Thresholds } from '../config'
 import { MODULES } from '../content/da/modules'
 import type { SessionResult } from '../engine/stats'
 import type { SpeedUnit } from '../format'
@@ -34,7 +34,7 @@ export interface Profile {
   /** Lifetime errors per character, for warm-ups. */
   keyErrors: Record<string, number>
   /** Added after v1 launched, so optional. */
-  prefs?: { sound?: boolean; speedUnit?: SpeedUnit }
+  prefs?: { sound?: boolean; speedUnit?: SpeedUnit; dailyGoalMinutes?: number }
   /** Best story result per storyKey(id, part). */
   storyBest?: Record<string, StoryRecord>
   /** Every finished attempt, oldest first. Basis for streaks, progress graphs and leaderboards. */
@@ -141,6 +141,11 @@ export function recordAttempt(
   return { ...profile, progress: { ...profile.progress, [key]: record }, keyErrors }
 }
 
+/** Clears everything earned, so stars, streaks, badges and story results start over. Settings stay. */
+export function resetProgress(profile: Profile): Profile {
+  return { ...profile, progress: {}, keyErrors: {}, history: [], storyBest: {} }
+}
+
 export function isPassedEx(profile: Profile, moduleId: number, ex: ExerciseId): boolean {
   return profile.progress[exerciseKey(moduleId, ex)]?.passed ?? false
 }
@@ -170,6 +175,8 @@ export function totalStars(profile: Profile): number {
 
 export const soundOn = (p: Profile) => p.prefs?.sound ?? true
 export const speedUnitOf = (p: Profile): SpeedUnit => p.prefs?.speedUnit ?? 'kpm'
+/** Minutes of typing per day to aim for. 0 hides the goal. */
+export const dailyGoalOf = (p: Profile): number => p.prefs?.dailyGoalMinutes ?? DAILY_GOAL_MINUTES
 
 /** Story score: speed, with errors weighing in twice so accuracy pays off. */
 export function storyPoints(r: SessionResult): number {

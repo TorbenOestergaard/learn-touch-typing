@@ -5,6 +5,7 @@ import {
   leaderboard,
   logAttempt,
   recordStory,
+  resetProgress,
   emptyStore,
   isUnlocked,
   loadStore,
@@ -85,5 +86,16 @@ describe('profiles', () => {
       [1, 'exercise', 30],
       [2, 'story', 80],
     ])
+  })
+
+  it('reset clears progress, history and story results but keeps settings', () => {
+    let p = createProfile('Ida', '🦊')
+    p = { ...p, settings: { ...p.settings, baseKpm: 20 }, prefs: { dailyGoalMinutes: 5 } }
+    p = recordAttempt(p, 1, 0, result(40, 0.99), 1)
+    p = logAttempt(recordStory(p, 'raeven:1:v2', result(40, 0.99)).profile, result(40, 0.99), { kind: 'story' })
+    const r = resetProgress(p)
+    expect(r).toMatchObject({ progress: {}, keyErrors: {}, history: [], storyBest: {} })
+    expect(r.settings.baseKpm).toBe(20)
+    expect(r.prefs).toEqual({ dailyGoalMinutes: 5 })
   })
 })

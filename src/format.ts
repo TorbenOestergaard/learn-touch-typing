@@ -15,3 +15,6 @@ export function formatSpeedDiff(diffKpm: number, unit: SpeedUnit): string {
 export const speedUnitLabel = (unit: SpeedUnit) => da.speedUnits[unit]
 
 export const pct = (v: number) => `${Math.floor(v * 100)} %`
+
+/** Whole numbers with Danish thousands separators: 10.000. */
+export const formatCount = (n: number) => Math.round(n).toLocaleString('da-DK')

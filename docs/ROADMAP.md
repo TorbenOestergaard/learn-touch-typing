@@ -26,7 +26,7 @@ session can pick it up with only this file and `CLAUDE.md`.
 | Milestone | Status | Version | Can run in parallel with |
 |---|---|---|---|
 | M0 Foundation: app, modules, stories, attempt log | ✅ Done | 0.1.1 | – |
-| M1 Start page with streaks and achievements | Not started | 0.2.0 | Run first; it changes the navigation |
+| M1 Start page with streaks and achievements | ✅ Done | 0.2.0 | Run first; it changes the navigation |
 | M2 Progress over time: test history and graphs | Not started | 0.3.0 | M3, M4 (after M1) |
 | M3 Profile PINs | Not started | 0.4.0 | M2, M4 |
 | M4 Leaderboard with full history and sorting | Not started | 0.5.0 | M2, M3 |
@@ -100,6 +100,14 @@ make it obvious what to do next and reward coming back every day.
 **Questions for the user:** should there be a daily goal, such as 10 minutes or 3 exercises? Should streaks forgive one missed day?
 
 **Done when:** the home screen shows the streak, today's stats and achievements; everything is computed from `history` and covered by tests; and the result screen celebrates newly unlocked achievements.
+
+**Handover notes (M1, done in 0.2.0):**
+- **User decisions:** a daily goal of 10 minutes (`DAILY_GOAL_MINUTES`, per profile in `prefs.dailyGoalMinutes` via `dailyGoalOf`, 0 hides it). Streaks are strict: one missed day resets them. Today only counts as missed once it is over, so yesterday's streak still shows until midnight.
+- **Navigation:** `home` is the default screen. `map` is the training view (back to home). The parent page, story picker and story results go back to home. Exercise results still go to the map. Leaving a story mid-typing goes back to the story picker. The typing screen's exit link now says "Tilbage".
+- **Logic:** `src/progress/streak.ts` (local-day streaks, `today`/`thisWeek`, Monday weeks, DST-safe `dayIndex`) and `src/progress/achievements.ts`. Keystrokes are `correct + errors`. "Øvelser" in the activity table counts every finished attempt, including stories and warm-ups.
+- **Achievements aren't stored.** `newlyUnlocked(before, after)` compares the profile before and after an attempt in `App.tsx`. No "seen" flags were needed. Old attempts from before v0.1.1 only count through `progress` and `storyBest` (first exercise, 3 stars, modules, stories); streaks and keystrokes need `history`.
+- **Reset:** "Nulstil fremskridt" (`resetProgress`) clears `progress`, `keyErrors`, `history` and `storyBest`, so streaks, badges and the profile's leaderboard entries start over. Settings and prefs are kept (user decision).
+- **Ideas left out:** a "new!" marker on the home screen, and a streak freeze. M2's re-test suggestion fits on the home screen, between the entries and the activity table.
 
 ## M2 – Progress over time: test history and graphs (0.3.0)
 

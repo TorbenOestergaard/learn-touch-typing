@@ -13,33 +13,23 @@ import {
 interface Props {
   profile: Profile
   onStart: (moduleId: number, ex: ExerciseId) => void
-  onSwitchProfile: () => void
-  onParents: () => void
-  onStories: () => void
+  onHome: () => void
 }
 
-export function ModuleMap({ profile, onStart, onSwitchProfile, onParents, onStories }: Props) {
+export function ModuleMap({ profile, onStart, onHome }: Props) {
   const next = nextExercise(profile)
   const exercises: ExerciseId[] = [...Array.from({ length: EXERCISES_PER_MODULE }, (_, i) => i), 'test']
 
   return (
     <div className="map">
-      <header className="map-header">
-        <div className="who">
-          <span className="avatar">{profile.avatar}</span>
-          <div>
-            <h2>{profile.name}</h2>
-            <span className="muted">{da.stars(totalStars(profile))}</span>
-          </div>
-        </div>
-        <div className="map-links">
-          <button className="link" onClick={onSwitchProfile}>
-            {da.switchProfile}
-          </button>
-          <button className="link" onClick={onParents}>
-            {da.parents}
-          </button>
-        </div>
+      <header className="typing-header">
+        <button className="link" onClick={onHome}>
+          ← {da.toHome}
+        </button>
+        <h2>
+          {profile.avatar} {da.training}
+        </h2>
+        <span className="muted">{da.stars(totalStars(profile))}</span>
       </header>
 
       {next ? (
@@ -50,10 +40,6 @@ export function ModuleMap({ profile, onStart, onSwitchProfile, onParents, onStor
       ) : (
         <p className="banner">{da.allDone}</p>
       )}
-
-      <button className="story-entry secondary" onClick={onStories}>
-        🏁 {da.stories}
-      </button>
 
       <ol className="modules">
         {MODULES.map((m) => {
