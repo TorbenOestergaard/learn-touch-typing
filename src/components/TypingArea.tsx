@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSession, expectedChar, isFinished, pressKey, type SessionState } from '../engine/session'
 import { computeResult, type SessionResult } from '../engine/stats'
 import { da } from '../i18n/da'
@@ -32,15 +32,17 @@ export function TypingArea({
   onDone,
   onExit,
 }: Props) {
-  const [session, setSession] = useState<SessionState>(() => createSession(lines))
+  // Every line but the last ends with a space, like the end of a word in running text.
+  const padded = useMemo(() => lines.map((l, i) => (i < lines.length - 1 ? `${l} ` : l)), [lines])
+  const [session, setSession] = useState<SessionState>(() => createSession(padded))
   const [showKeyboard, setShowKeyboard] = useState(true)
   const doneRef = useRef(false)
   const currentLineRef = useRef<HTMLDivElement>(null)
 
   const restart = useCallback(() => {
     doneRef.current = false
-    setSession(createSession(lines))
-  }, [lines])
+    setSession(createSession(padded))
+  }, [padded])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -112,6 +114,7 @@ export function TypingArea({
               <div className="ex-text">
                 {[...line].map((ch, j) => {
                   const cur = isCurrent && j === session.col
+                  const eol = ch === ' ' && j === line.length - 1
                   return (
                     <span
                       // Changing the key on each error restarts the flash animation.
@@ -120,9 +123,10 @@ export function TypingArea({
                         j < typed ? 'typed' : '',
                         cur ? 'current' : '',
                         cur && session.errorTick > 0 ? 'flash' : '',
+                        eol ? 'eol' : '',
                       ].join(' ')}
                     >
-                      {ch}
+                      {eol ? '␣' : ch}
                     </span>
                   )
                 })}

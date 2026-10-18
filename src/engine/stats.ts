@@ -20,7 +20,7 @@ export function computeResult(s: SessionState): SessionResult {
   const kpm = minutes > 0 ? s.correct / minutes : 0
   const total = s.correct + s.errors
   return {
-    kpm: Math.round(kpm),
+    kpm: Math.round(kpm * 100) / 100,
     accuracy: total > 0 ? s.correct / total : 1,
     durationMs,
     correct: s.correct,

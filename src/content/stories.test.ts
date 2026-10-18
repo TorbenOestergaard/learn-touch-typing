@@ -3,10 +3,12 @@ import { STORIES, storyPart } from './da/stories'
 import { difficulty, lix } from './lix'
 
 describe('stories', () => {
-  it('use only keys from the learning path and fit on one A4 page', () => {
+  it('use only keys from the learning path and are about 200 words', () => {
     for (const s of STORIES) {
       expect(s.text).toMatch(/^[a-zA-ZæøåÆØÅ ,.-]+$/)
-      expect(s.text.split(/\s+/).length).toBeLessThanOrEqual(400)
+      const words = s.text.split(/\s+/).length
+      expect(words).toBeGreaterThanOrEqual(170)
+      expect(words).toBeLessThanOrEqual(230)
     }
   })
 
@@ -15,16 +17,16 @@ describe('stories', () => {
     expect(levels).toEqual(['easy', 'medium', 'hard'])
   })
 
-  it('cuts into roughly thirds at sentence ends', () => {
+  it('cuts into a quarter and a half at sentence ends', () => {
     for (const s of STORIES) {
-      const third = storyPart(s.text, 1)
-      const twoThirds = storyPart(s.text, 2)
-      expect(third.endsWith('.')).toBe(true)
-      expect(s.text.startsWith(twoThirds)).toBe(true)
-      expect(third.length / s.text.length).toBeGreaterThan(0.25)
-      expect(third.length / s.text.length).toBeLessThan(0.42)
-      expect(twoThirds.length / s.text.length).toBeGreaterThan(0.58)
-      expect(twoThirds.length / s.text.length).toBeLessThan(0.75)
+      const quarter = storyPart(s.text, 1)
+      const half = storyPart(s.text, 2)
+      expect(quarter.endsWith('.')).toBe(true)
+      expect(s.text.startsWith(half)).toBe(true)
+      expect(quarter.length / s.text.length).toBeGreaterThan(0.17)
+      expect(quarter.length / s.text.length).toBeLessThan(0.34)
+      expect(half.length / s.text.length).toBeGreaterThan(0.4)
+      expect(half.length / s.text.length).toBeLessThan(0.6)
       expect(storyPart(s.text, 3)).toBe(s.text)
     }
   })

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import type { Thresholds } from '../config'
+import type { SpeedUnit } from '../format'
 import { da } from '../i18n/da'
-import type { Profile } from '../storage/profiles'
+import { speedUnitOf, type Profile } from '../storage/profiles'
 
 interface Props {
   profiles: Profile[]
   initialProfileId: string | null
-  onSave: (id: string, settings: Thresholds) => void
+  onSave: (id: string, settings: Thresholds, speedUnit: SpeedUnit) => void
   onReset: (id: string) => void
   onDelete: (id: string) => void
   onBack: () => void
@@ -40,7 +41,7 @@ export function ParentSettings({ profiles, initialProfileId, onSave, onReset, on
               ))}
             </select>
           </label>
-          <ThresholdForm key={profile.id} profile={profile} onSave={(s) => onSave(profile.id, s)} />
+          <ThresholdForm key={profile.id} profile={profile} onSave={(s, unit) => onSave(profile.id, s, unit)} />
           <div className="actions danger-zone">
             <button
               className="secondary"
@@ -61,10 +62,17 @@ export function ParentSettings({ profiles, initialProfileId, onSave, onReset, on
   )
 }
 
-function ThresholdForm({ profile, onSave }: { profile: Profile; onSave: (s: Thresholds) => void }) {
+function ThresholdForm({
+  profile,
+  onSave,
+}: {
+  profile: Profile
+  onSave: (s: Thresholds, unit: SpeedUnit) => void
+}) {
   const [accuracy, setAccuracy] = useState(Math.round(profile.settings.minAccuracy * 100))
   const [baseKpm, setBaseKpm] = useState(profile.settings.baseKpm)
   const [step, setStep] = useState(profile.settings.kpmStepPerModule)
+  const [unit, setUnit] = useState<SpeedUnit>(speedUnitOf(profile))
   const [saved, setSaved] = useState(false)
 
   return (
@@ -72,7 +80,7 @@ function ThresholdForm({ profile, onSave }: { profile: Profile; onSave: (s: Thre
       className="settings-form"
       onSubmit={(e) => {
         e.preventDefault()
-        onSave({ minAccuracy: accuracy / 100, baseKpm, kpmStepPerModule: step })
+        onSave({ minAccuracy: accuracy / 100, baseKpm, kpmStepPerModule: step }, unit)
         setSaved(true)
       }}
       onChange={() => setSaved(false)}
@@ -88,6 +96,13 @@ function ThresholdForm({ profile, onSave }: { profile: Profile; onSave: (s: Thre
       <label>
         {da.kpmStep}
         <input type="number" min={0} max={50} value={step} onChange={(e) => setStep(+e.target.value)} />
+      </label>
+      <label>
+        {da.speedUnitSetting}
+        <select value={unit} onChange={(e) => setUnit(e.target.value as SpeedUnit)}>
+          <option value="kpm">{da.speedUnits.kpm}</option>
+          <option value="kps">{da.speedUnits.kps}</option>
+        </select>
       </label>
       <div className="actions">
         <button type="submit">{da.save}</button>

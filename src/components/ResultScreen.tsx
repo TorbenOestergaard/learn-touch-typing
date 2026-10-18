@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { FAILS_BEFORE_WARMUP } from '../config'
 import { weakKeys, type SessionResult } from '../engine/stats'
+import { formatSpeed, formatSpeedDiff, pct, speedUnitLabel, type SpeedUnit } from '../format'
 import { da } from '../i18n/da'
 import type { ExerciseRecord } from '../storage/profiles'
 
@@ -13,6 +14,7 @@ interface Props {
   moduleId: number
   requiredKpm: number
   minAccuracy: number
+  speedUnit: SpeedUnit
   /** The record before this attempt, for comparison. */
   previous?: ExerciseRecord
   failsInRow: number
@@ -25,7 +27,6 @@ interface Props {
   onMap: () => void
 }
 
-const pct = (v: number) => `${Math.floor(v * 100)} %`
 const keyLabel = (c: string) => (c === ' ' ? da.space : c)
 
 export function ResultScreen(p: Props) {
@@ -85,11 +86,13 @@ export function ResultScreen(p: Props) {
       <div className="stat-row">
         <div className={`stat ${p.isWarmup || speedOk ? 'ok' : 'miss'}`}>
           <div className="stat-label">{da.speed}</div>
-          <div className="stat-value">{p.result.kpm}</div>
-          <div className="stat-unit">{da.speedUnit}</div>
-          {!p.isWarmup && <div className="stat-goal">{da.goal(String(p.requiredKpm))}</div>}
+          <div className="stat-value">{formatSpeed(p.result.kpm, p.speedUnit)}</div>
+          <div className="stat-unit">{speedUnitLabel(p.speedUnit)}</div>
+          {!p.isWarmup && <div className="stat-goal">{da.goal(formatSpeed(p.requiredKpm, p.speedUnit))}</div>}
           {speedRecord && <div className="badge">{da.newRecord}</div>}
-          {!speedRecord && speedDiff !== null && <div className="stat-diff">{da.vsLast(speedDiff)}</div>}
+          {!speedRecord && speedDiff !== null && (
+            <div className="stat-diff">{da.vsLast(formatSpeedDiff(speedDiff, p.speedUnit))}</div>
+          )}
         </div>
         <div className={`stat ${p.isWarmup || accuracyOk ? 'ok' : 'miss'}`}>
           <div className="stat-label">{da.accuracy}</div>

@@ -788,3 +788,20 @@ legend {
   margin-top: 6px;
   font-weight: 600;
 }
+
+/* The space at the end of a line, shown faintly so it isn't missed. */
+.ex-text .eol {
+  color: var(--typed);
+  opacity: 0.6;
+}
+
+.ex-text .eol.typed {
+  opacity: 0.3;
+}
+
+.version {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 32px;
+}

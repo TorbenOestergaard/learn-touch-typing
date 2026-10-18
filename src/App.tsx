@@ -21,10 +21,12 @@ import {
   createProfile,
   exerciseKey,
   loadStore,
+  logAttempt,
   recordAttempt,
   recordStory,
   saveStore,
   soundOn,
+  speedUnitOf,
   type ExerciseId,
   type ExerciseRecord,
   type Profile,
@@ -108,8 +110,11 @@ export default function App() {
     (result: SessionResult) => {
       if (!storyTyping || !profile) return
       const { storyId, part } = storyTyping
-      const recorded = recordStory(profile, storyKey(storyId, part), result)
-      updateProfile(profile.id, () => recorded.profile)
+      const key = storyKey(storyId, part)
+      const recorded = recordStory(profile, key, result)
+      updateProfile(profile.id, () =>
+        logAttempt(recorded.profile, result, { kind: 'story', storyKey: key, points: recorded.points }),
+      )
       setScreen({
         name: 'story-result',
         storyId,
@@ -129,11 +134,17 @@ export default function App() {
       const kpm = requiredKpm(profile.settings, moduleId)
       const previous = profile.progress[exerciseKey(moduleId, ex)]
       if (warmupKeys) {
+        updateProfile(profile.id, (p) => logAttempt(p, result, { kind: 'warmup', moduleId }))
         setScreen({ name: 'result', moduleId, ex, seed, warmupKeys, result, stars: 0, previous, failsInRow: 0 })
         return
       }
       const stars = starsFor(result, profile.settings.minAccuracy, kpm)
-      const updated = recordAttempt(profile, moduleId, ex, result, stars)
+      const updated = logAttempt(recordAttempt(profile, moduleId, ex, result, stars), result, {
+        kind: ex === 'test' ? 'test' : 'exercise',
+        moduleId,
+        ex: ex === 'test' ? undefined : ex,
+        stars,
+      })
       updateProfile(profile.id, () => updated)
       setScreen({
         name: 'result',
@@ -174,7 +185,9 @@ export default function App() {
         <ParentSettings
           profiles={store.profiles}
           initialProfileId={store.activeProfileId}
-          onSave={(id, settings) => updateProfile(id, (p) => ({ ...p, settings }))}
+          onSave={(id, settings, speedUnit) =>
+            updateProfile(id, (p) => ({ ...p, settings, prefs: { ...p.prefs, speedUnit } }))
+          }
           onReset={(id) => updateProfile(id, (p) => ({ ...p, progress: {}, keyErrors: {} }))}
           onDelete={(id) => {
             setStore((s) => ({
@@ -237,6 +250,7 @@ export default function App() {
           moduleId={moduleId}
           requiredKpm={requiredKpm(profile.settings, moduleId)}
           minAccuracy={profile.settings.minAccuracy}
+          speedUnit={speedUnitOf(profile)}
           previous={screen.previous}
           failsInRow={screen.failsInRow}
           commonWords={ex === 'test' && screen.stars > 0 ? commonWordsAfter(moduleId) : undefined}

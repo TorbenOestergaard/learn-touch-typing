@@ -2,19 +2,21 @@ import { useState } from 'react'
 import { STORIES, storyKey, storyPart, type StoryLength } from '../content/da/stories'
 import { difficulty, lix } from '../content/lix'
 import type { SessionResult } from '../engine/stats'
+import { formatSpeed, pct, speedUnitLabel, type SpeedUnit } from '../format'
 import { da } from '../i18n/da'
-import { leaderboard, type Profile } from '../storage/profiles'
+import { leaderboard, speedUnitOf, type Profile } from '../storage/profiles'
 
 const LENGTHS: StoryLength[] = [1, 2, 3]
 const MEDALS = ['🥇', '🥈', '🥉']
-const pct = (v: number) => `${Math.floor(v * 100)} %`
 
-function Leaderboard({ profiles, storyId, part, highlight }: {
+function Leaderboard({ profiles, storyId, part, viewer }: {
   profiles: Profile[]
   storyId: string
   part: StoryLength
-  highlight?: string
+  /** The profile looking at the list: highlighted, and its speed unit is used. */
+  viewer: Profile
 }) {
+  const unit: SpeedUnit = speedUnitOf(viewer)
   const entries = leaderboard(profiles, storyKey(storyId, part)).slice(0, 5)
   return (
     <div className="leaderboard">
@@ -24,7 +26,7 @@ function Leaderboard({ profiles, storyId, part, highlight }: {
       ) : (
         <ol>
           {entries.map(({ profile, record }, i) => (
-            <li key={profile.id} className={profile.id === highlight ? 'me' : ''}>
+            <li key={profile.id} className={profile.id === viewer.id ? 'me' : ''}>
               <span className="lb-rank">{MEDALS[i] ?? `${i + 1}.`}</span>
               <span className="lb-name">
                 {profile.avatar} {profile.name}
@@ -33,7 +35,7 @@ function Leaderboard({ profiles, storyId, part, highlight }: {
                 {record.points} {da.points}
               </span>
               <span className="muted lb-detail">
-                {record.kpm} · {pct(record.accuracy)}
+                {formatSpeed(record.kpm, unit)} · {pct(record.accuracy)}
               </span>
             </li>
           ))}
@@ -109,7 +111,7 @@ export function StoryPicker({ profiles, profile, initial, onStart, onBack }: Pic
         {da.start} →
       </button>
 
-      <Leaderboard profiles={profiles} storyId={storyId} part={part} highlight={profile.id} />
+      <Leaderboard profiles={profiles} storyId={storyId} part={part} viewer={profile} />
       <p className="muted small">{da.storiesHint}</p>
       <p className="muted small">{da.pointsExplained}</p>
     </div>
@@ -154,8 +156,8 @@ export function StoryResult(p: ResultProps) {
       <div className="stat-row">
         <div className="stat">
           <div className="stat-label">{da.speed}</div>
-          <div className="stat-value">{p.result.kpm}</div>
-          <div className="stat-unit">{da.speedUnit}</div>
+          <div className="stat-value">{formatSpeed(p.result.kpm, speedUnitOf(p.profile))}</div>
+          <div className="stat-unit">{speedUnitLabel(speedUnitOf(p.profile))}</div>
         </div>
         <div className="stat">
           <div className="stat-label">{da.accuracy}</div>
@@ -163,7 +165,7 @@ export function StoryResult(p: ResultProps) {
           <div className="stat-unit">&nbsp;</div>
         </div>
       </div>
-      <Leaderboard profiles={p.profiles} storyId={p.storyId} part={p.part} highlight={p.profile.id} />
+      <Leaderboard profiles={p.profiles} storyId={p.storyId} part={p.part} viewer={p.profile} />
       <div className="actions">
         <button className="secondary" onClick={p.onRetry}>
           ↺ {da.tryAgain}

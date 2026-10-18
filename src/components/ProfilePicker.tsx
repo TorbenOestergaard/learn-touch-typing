@@ -75,6 +75,7 @@ export function ProfilePicker({ profiles, onSelect, onCreate }: Props) {
           </div>
         </form>
       )}
+      <p className="version">{da.version(__APP_VERSION__)}</p>
     </div>
   )
 }

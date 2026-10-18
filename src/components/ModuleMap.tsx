@@ -94,6 +94,7 @@ export function ModuleMap({ profile, onStart, onSwitchProfile, onParents, onStor
           )
         })}
       </ol>
+      <p className="version">{da.version(__APP_VERSION__)}</p>
     </div>
   )
 }

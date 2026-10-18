@@ -3,6 +3,7 @@ import type { SessionResult } from '../engine/stats'
 import {
   createProfile,
   leaderboard,
+  logAttempt,
   recordStory,
   emptyStore,
   isUnlocked,
@@ -74,5 +75,15 @@ describe('profiles', () => {
     bo = recordStory(bo, 's:1', result(90, 1)).profile
     expect(leaderboard([ida, bo], 's:1').map((e) => e.profile.name)).toEqual(['Bo', 'Ida'])
     expect(leaderboard([ida, bo], 's:2')).toEqual([])
+  })
+
+  it('logs every attempt in order', () => {
+    let p = createProfile('Ida', '🦊')
+    p = logAttempt(p, result(30, 0.9), { kind: 'exercise', moduleId: 1, ex: 0, stars: 0 }, 1)
+    p = logAttempt(p, result(80, 1), { kind: 'story', storyKey: 's:1:v2', points: 80 }, 2)
+    expect(p.history?.map((a) => [a.at, a.kind, a.kpm])).toEqual([
+      [1, 'exercise', 30],
+      [2, 'story', 80],
+    ])
   })
 })

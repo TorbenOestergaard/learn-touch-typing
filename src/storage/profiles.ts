@@ -4,6 +4,7 @@
 import { DEFAULT_THRESHOLDS, EXERCISES_PER_MODULE, type Thresholds } from '../config'
 import { MODULES } from '../content/da/modules'
 import type { SessionResult } from '../engine/stats'
+import type { SpeedUnit } from '../format'
 
 export const STORAGE_KEY = 'ltt:v1'
 const VERSION = 1
@@ -33,9 +34,32 @@ export interface Profile {
   /** Lifetime errors per character, for warm-ups. */
   keyErrors: Record<string, number>
   /** Added after v1 launched, so optional. */
-  prefs?: { sound?: boolean }
+  prefs?: { sound?: boolean; speedUnit?: SpeedUnit }
   /** Best story result per storyKey(id, part). */
   storyBest?: Record<string, StoryRecord>
+  /** Every finished attempt, oldest first. Basis for streaks, progress graphs and leaderboards. */
+  history?: Attempt[]
+}
+
+export type AttemptKind = 'exercise' | 'test' | 'warmup' | 'story'
+
+export interface Attempt {
+  /** Finish time, ms since epoch. */
+  at: number
+  kind: AttemptKind
+  moduleId?: number
+  /** 0-based exercise index, for kind 'exercise'. */
+  ex?: number
+  storyKey?: string
+  kpm: number
+  accuracy: number
+  durationMs: number
+  correct: number
+  errors: number
+  /** Exercises and tests. */
+  stars?: number
+  /** Stories. */
+  points?: number
 }
 
 export interface StoryRecord {
@@ -145,6 +169,7 @@ export function totalStars(profile: Profile): number {
 }
 
 export const soundOn = (p: Profile) => p.prefs?.sound ?? true
+export const speedUnitOf = (p: Profile): SpeedUnit => p.prefs?.speedUnit ?? 'kpm'
 
 /** Story score: speed, with errors weighing in twice so accuracy pays off. */
 export function storyPoints(r: SessionResult): number {
@@ -177,4 +202,22 @@ export function leaderboard(profiles: Profile[], key: string): { profile: Profil
       return record ? [{ profile, record }] : []
     })
     .sort((a, b) => b.record.points - a.record.points)
+}
+
+export function logAttempt(
+  profile: Profile,
+  result: SessionResult,
+  attempt: Pick<Attempt, 'kind' | 'moduleId' | 'ex' | 'storyKey' | 'stars' | 'points'>,
+  at = Date.now(),
+): Profile {
+  const entry: Attempt = {
+    ...attempt,
+    at,
+    kpm: result.kpm,
+    accuracy: result.accuracy,
+    durationMs: Math.round(result.durationMs),
+    correct: result.correct,
+    errors: result.errors,
+  }
+  return { ...profile, history: [...(profile.history ?? []), entry] }
 }
