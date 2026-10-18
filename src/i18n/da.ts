@@ -28,6 +28,8 @@ export const da = {
   typeTheLine: 'Skriv teksten under hver linje.',
   restart: 'Start forfra',
   restartHint: 'Esc = start forfra',
+  soundOn: '🔊 Lyd ved fejl',
+  soundOff: '🔇 Lyd slået fra',
   showKeyboard: 'Vis tastatur',
   hideKeyboard: 'Skjul tastatur',
   wrongLayout:
@@ -53,6 +55,11 @@ export const da = {
   failedTitle: 'Næsten! Prøv igen',
   moduleDone: (n: number) => `Modul ${n} er klaret! 🎉`,
   warmupDone: 'Godt varmet op!',
+  commonWords: (count: number, total: number) =>
+    count >= total
+      ? `Nu kan du skrive alle de ${total} mest almindelige ord – uden at kigge!`
+      : `Nu kan du skrive ${count} af de ${total} mest almindelige ord – uden at kigge!`,
+  newWordsExamples: 'Nye ord du kan skrive',
   speed: 'Hastighed',
   speedUnit: 'anslag i minuttet',
   accuracy: 'Præcision',
@@ -68,6 +75,26 @@ export const da = {
   startWarmup: 'Start opvarmning',
   slowerHint: 'Tip: Skriv roligt og præcist. Farten kommer af sig selv.',
   fasterHint: 'Meget præcist! Prøv at skrive lidt hurtigere næste gang.',
+
+  // Stories (competition)
+  stories: 'Historie-konkurrence',
+  storiesIntro: 'Vælg en historie og en længde. Hvem får flest point?',
+  storiesHint: 'Historierne bruger alle bogstaverne. De er lettest, når du har klaret alle moduler.',
+  difficulty: { easy: 'Let', medium: 'Mellem', hard: 'Svær' },
+  lixLabel: (n: number) => `LIX ${n}`,
+  words: (n: number) => `${n} ord`,
+  length: 'Længde',
+  lengths: { 1: 'Kort (⅓)', 2: 'Mellem (⅔)', 3: 'Hele' },
+  start: 'Start',
+  leaderboard: 'Topliste',
+  noScores: 'Ingen har prøvet endnu. Bliv den første!',
+  points: 'point',
+  pointsExplained: 'Point = hastighed × præcision × præcision. Fejl koster altså dobbelt.',
+  yourScore: 'Dine point',
+  newPersonalBest: 'Ny personlig rekord!',
+  yourBest: (n: number) => `Din rekord: ${n} point`,
+  rank: (n: number) => `Du er nr. ${n} på toplisten`,
+  otherStory: 'Vælg en anden historie',
 
   // Parents
   parentsTitle: 'Indstillinger for forældre',

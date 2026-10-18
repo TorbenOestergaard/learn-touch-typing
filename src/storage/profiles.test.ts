@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { SessionResult } from '../engine/stats'
 import {
   createProfile,
+  leaderboard,
+  recordStory,
   emptyStore,
   isUnlocked,
   loadStore,
@@ -58,5 +60,19 @@ describe('profiles', () => {
     p = recordAttempt(p, 1, 'test', result(40, 1), 1)
     expect(isUnlocked(p, 2, 0)).toBe(true)
     expect(nextExercise(p)).toEqual({ moduleId: 2, ex: 0 })
+  })
+
+  it('keeps the best story result and ranks profiles', () => {
+    let ida = createProfile('Ida', '🦊')
+    let bo = createProfile('Bo', '🐼')
+    const first = recordStory(ida, 's:1', result(100, 0.9))
+    expect(first).toMatchObject({ points: 81, isRecord: true })
+    const worse = recordStory(first.profile, 's:1', result(60, 1))
+    expect(worse.isRecord).toBe(false)
+    ida = worse.profile
+    expect(ida.storyBest?.['s:1']).toMatchObject({ points: 81, attempts: 2 })
+    bo = recordStory(bo, 's:1', result(90, 1)).profile
+    expect(leaderboard([ida, bo], 's:1').map((e) => e.profile.name)).toEqual(['Bo', 'Ida'])
+    expect(leaderboard([ida, bo], 's:2')).toEqual([])
   })
 })

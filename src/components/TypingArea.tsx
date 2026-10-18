@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createSession, expectedChar, isFinished, pressKey, type SessionState } from '../engine/session'
 import { computeResult, type SessionResult } from '../engine/stats'
 import { da } from '../i18n/da'
+import { errorBeep } from '../sound'
 import { Keyboard } from './Keyboard'
 
 interface Props {
@@ -9,15 +10,32 @@ interface Props {
   subtitle?: string
   lines: string[]
   known: Set<string>
-  keyboardByDefault: boolean
+  /** Show the on-screen keyboard (with a hide option). Off means no keyboard at all. */
+  keyboardAvailable: boolean
+  sound: boolean
+  onToggleSound: () => void
+  /** Smaller text and auto-scroll, for long texts like stories. */
+  compact?: boolean
   onDone: (result: SessionResult) => void
   onExit: () => void
 }
 
-export function TypingArea({ title, subtitle, lines, known, keyboardByDefault, onDone, onExit }: Props) {
+export function TypingArea({
+  title,
+  subtitle,
+  lines,
+  known,
+  keyboardAvailable,
+  sound,
+  onToggleSound,
+  compact = false,
+  onDone,
+  onExit,
+}: Props) {
   const [session, setSession] = useState<SessionState>(() => createSession(lines))
-  const [showKeyboard, setShowKeyboard] = useState(keyboardByDefault)
+  const [showKeyboard, setShowKeyboard] = useState(true)
   const doneRef = useRef(false)
+  const currentLineRef = useRef<HTMLDivElement>(null)
 
   const restart = useCallback(() => {
     doneRef.current = false
@@ -26,7 +44,7 @@ export function TypingArea({ title, subtitle, lines, known, keyboardByDefault, o
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey && e.key.length !== 1) return
+      if (e.metaKey || e.ctrlKey || (e.altKey && e.key.length !== 1)) return
       if (e.key === 'Escape') {
         e.preventDefault()
         restart()
@@ -40,6 +58,14 @@ export function TypingArea({ title, subtitle, lines, known, keyboardByDefault, o
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [restart])
+
+  useEffect(() => {
+    if (sound && session.errorTick > 0) errorBeep()
+  }, [session.errorTick, sound])
+
+  useEffect(() => {
+    if (compact) currentLineRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [compact, session.line])
 
   useEffect(() => {
     if (isFinished(session) && !doneRef.current) {
@@ -73,12 +99,16 @@ export function TypingArea({ title, subtitle, lines, known, keyboardByDefault, o
 
       {session.wrongLayout && <p className="banner warn">{da.wrongLayout}</p>}
 
-      <div className="exercise" role="application" aria-label={title}>
+      <div className={`exercise ${compact ? 'compact' : ''}`} role="application" aria-label={title}>
         {session.lines.map((line, i) => {
           const typed = i < session.line ? line.length : i === session.line ? session.col : 0
           const isCurrent = i === session.line && !isFinished(session)
           return (
-            <div className={`ex-line ${i < session.line ? 'done' : ''}`} key={i}>
+            <div
+              className={`ex-line ${i < session.line ? 'done' : ''}`}
+              key={i}
+              ref={i === session.line ? currentLineRef : undefined}
+            >
               <div className="ex-text">
                 {[...line].map((ch, j) => {
                   const cur = isCurrent && j === session.col
@@ -108,19 +138,32 @@ export function TypingArea({ title, subtitle, lines, known, keyboardByDefault, o
 
       {session.startedAt === null && <p className="muted center">{da.startHint}</p>}
 
-      {showKeyboard && <Keyboard next={next} known={known} />}
+      {keyboardAvailable && showKeyboard && <Keyboard next={next} known={known} />}
 
       <footer className="typing-footer">
         <span className="muted">{da.restartHint}</span>
-        <button
-          className="link"
-          onClick={(e) => {
-            e.currentTarget.blur()
-            setShowKeyboard((v) => !v)
-          }}
-        >
-          {showKeyboard ? da.hideKeyboard : da.showKeyboard}
-        </button>
+        <span className="footer-buttons">
+          <button
+            className="link"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              onToggleSound()
+            }}
+          >
+            {sound ? da.soundOn : da.soundOff}
+          </button>
+          {keyboardAvailable && (
+            <button
+              className="link"
+              onClick={(e) => {
+                e.currentTarget.blur()
+                setShowKeyboard((v) => !v)
+              }}
+            >
+              {showKeyboard ? da.hideKeyboard : da.showKeyboard}
+            </button>
+          )}
+        </span>
       </footer>
     </div>
   )

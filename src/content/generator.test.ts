@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LINE_LENGTH, LINES_PER_EXERCISE, LINES_PER_TEST } from '../config'
 import { MODULES, allowedKeys, shiftAllowed } from './da/modules'
-import { generateExercise, generateTest, generateWarmup, wordsFor } from './generator'
+import { COMMON_WORDS, commonWordsAfter, generateExercise, generateTest, generateWarmup, wordsFor } from './generator'
 
 const SEEDS = [1, 2, 3, 42, 1234]
 
@@ -68,5 +68,12 @@ describe('generator', () => {
     const text = generateWarmup(2, ['s', 'o'], 1).join(' ')
     expect(text).toContain('sss')
     expect(text).toContain('o')
+  })
+
+  it('counts common words that grow with each module and reach all of them', () => {
+    const counts = MODULES.map((m) => commonWordsAfter(m.id).count)
+    for (let i = 1; i < counts.length; i++) expect(counts[i]).toBeGreaterThanOrEqual(counts[i - 1])
+    expect(counts[counts.length - 1]).toBe(COMMON_WORDS)
+    expect(commonWordsAfter(1).examples).toContain('ikke')
   })
 })

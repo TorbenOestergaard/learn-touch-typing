@@ -23,11 +23,13 @@ export const LINES_PER_TEST = 4
 
 /** Target characters per line. */
 export const LINE_LENGTH = 36
+/** Stories use smaller text, so lines can be longer. */
+export const STORY_LINE_LENGTH = 56
 
 /** Star thresholds, relative to the required speed. */
 export const STARS = {
   two: { accuracy: 0.97, speedFactor: 1.2 },
-  three: { accuracy: 0.99, speedFactor: 1.4 },
+  three: { accuracy: 0.98, speedFactor: 1.5 },
 }
 
 /** Failed attempts in a row before a warm-up drill is suggested. */

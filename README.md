@@ -17,8 +17,11 @@ It is Danish first: Danish keyboard layout, Danish interface and Danish words.
   - Exercise 1 drills the new keys.
   - Exercises 2–5 mix real words with made-up words.
   - Exercise 6 and the test use real words only.
-- **Typing:** you type on the line under the text. A wrong key doesn't move the cursor and you can't erase, so you have to find the right key. Esc restarts.
-- **Feedback:** no speed or errors are shown while typing. You see them afterwards, along with 1–3 stars and the keys that gave you the most trouble.
+- **Typing:** you type on the line under the text. A wrong key doesn't move the cursor and you can't erase, so you have to find the right key. A wrong key also gives a short beep, which can be switched off. Esc restarts.
+- **On-screen keyboard:** shown only in exercise 1 of each module, so learners don't get used to looking at it.
+- **Module completed:** passing a module test shows how many of the 1,000 most common words you can now type.
+- **Story competition:** three stories, each shorter than one A4 page and of increasing difficulty: fairy tale (LIX 8), fantasy (LIX 29) and drama (LIX 40). Each can be typed as ⅓, ⅔ or the whole story. Points = speed × accuracy², and the leaderboard compares the profiles on the same device.
+- **Feedback:** no speed or errors are shown while typing. You see them afterwards, along with 1–3 stars and the keys that gave you the most trouble. 3 stars require at least 98 % accuracy and 1.5 × the required speed.
 - **Passing:** by default, 95 % accuracy and 30 keystrokes per minute in module 1, plus 5 per module after that. Parents can change this per profile under "Forældre".
 - **Storage:** profiles and progress are saved in the browser (localStorage). There is no login.
 

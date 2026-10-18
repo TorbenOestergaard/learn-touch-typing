@@ -16,6 +16,8 @@ interface Props {
   /** The record before this attempt, for comparison. */
   previous?: ExerciseRecord
   failsInRow: number
+  /** Shown when a module test is passed. */
+  commonWords?: { count: number; total: number; examples: string[] }
   hasNext: boolean
   onRetry: () => void
   onNext: () => void
@@ -66,6 +68,17 @@ export function ResultScreen(p: Props) {
               ★
             </span>
           ))}
+        </div>
+      )}
+
+      {p.commonWords && (
+        <div className="common-words">
+          <p>{da.commonWords(p.commonWords.count, p.commonWords.total)}</p>
+          {p.commonWords.examples.length > 0 && (
+            <p className="muted">
+              {da.newWordsExamples}: {p.commonWords.examples.join(', ')}
+            </p>
+          )}
         </div>
       )}
 

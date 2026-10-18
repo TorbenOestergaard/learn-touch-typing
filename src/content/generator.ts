@@ -2,7 +2,7 @@
 
 import { LINE_LENGTH, LINES_PER_EXERCISE, LINES_PER_TEST } from '../config'
 import { keyFor, type Finger } from '../layouts/da'
-import { allowedKeys, getModule, shiftAllowed } from './da/modules'
+import { MODULES, allowedKeys, getModule, shiftAllowed } from './da/modules'
 import WORDS from './da/words.json'
 
 export type Rng = () => number
@@ -52,12 +52,12 @@ function gibberish(rng: Rng, letters: string[], must: string): string {
   return w
 }
 
-/** Wraps tokens into lines of at most LINE_LENGTH and returns the first `count`. */
-function wrap(tokens: string[], count: number): string[] {
+/** Wraps tokens into lines of at most `lineLength` and returns the first `count`. */
+function wrap(tokens: string[], count: number, lineLength = LINE_LENGTH): string[] {
   const lines: string[] = []
   let current = ''
   for (const t of tokens) {
-    if (current && current.length + 1 + t.length > LINE_LENGTH) {
+    if (current && current.length + 1 + t.length > lineLength) {
       lines.push(current)
       if (lines.length === count) return lines
       current = t
@@ -67,6 +67,11 @@ function wrap(tokens: string[], count: number): string[] {
   }
   if (current && lines.length < count) lines.push(current)
   return lines
+}
+
+/** Wraps running text (e.g. a story) into lines; the line break replaces a space. */
+export function wrapText(text: string, lineLength: number): string[] {
+  return wrap(text.split(/\s+/).filter(Boolean), Infinity, lineLength)
 }
 
 /** Short drills on the new keys: "fff jjj fjf", plus reaches from the finger's home key. */
@@ -285,4 +290,20 @@ export function generateWarmup(moduleId: number, weak: string[], seed: number): 
   })
   const tokens = [...drillTokens(keys, allowed, false), ...wordStream(source, LINE_LENGTH * 2)]
   return wrap(tokens, 3)
+}
+
+export const COMMON_WORDS = 1000
+
+/** How many of the most common words can be typed after a module, and examples of new ones. */
+export function commonWordsAfter(moduleId: number): { count: number; total: number; examples: string[] } {
+  const top = (WORDS as string[]).slice(0, COMMON_WORDS)
+  const typeable = (keys: Set<string>) => top.filter((w) => [...w].every((c) => keys.has(c)))
+  const now = typeable(allowedKeys(moduleId))
+  const idx = MODULES.findIndex((m) => m.id === moduleId)
+  const before = new Set(idx > 0 ? typeable(allowedKeys(MODULES[idx - 1].id)) : [])
+  return {
+    count: now.length,
+    total: top.length,
+    examples: now.filter((w) => !before.has(w) && w.length > 2).slice(0, 8),
+  }
 }

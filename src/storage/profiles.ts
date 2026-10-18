@@ -32,6 +32,18 @@ export interface Profile {
   progress: Record<string, ExerciseRecord>
   /** Lifetime errors per character, for warm-ups. */
   keyErrors: Record<string, number>
+  /** Added after v1 launched, so optional. */
+  prefs?: { sound?: boolean }
+  /** Best story result per storyKey(id, part). */
+  storyBest?: Record<string, StoryRecord>
+}
+
+export interface StoryRecord {
+  points: number
+  kpm: number
+  accuracy: number
+  attempts: number
+  date: number
 }
 
 export interface Store {
@@ -130,4 +142,39 @@ export function nextExercise(profile: Profile): { moduleId: number; ex: Exercise
 
 export function totalStars(profile: Profile): number {
   return Object.values(profile.progress).reduce((sum, r) => sum + r.bestStars, 0)
+}
+
+export const soundOn = (p: Profile) => p.prefs?.sound ?? true
+
+/** Story score: speed, with errors weighing in twice so accuracy pays off. */
+export function storyPoints(r: SessionResult): number {
+  return Math.round(r.kpm * r.accuracy ** 2)
+}
+
+export function recordStory(
+  profile: Profile,
+  key: string,
+  result: SessionResult,
+): { profile: Profile; points: number; isRecord: boolean } {
+  const points = storyPoints(result)
+  const prev = profile.storyBest?.[key]
+  const isRecord = !prev || points > prev.points
+  const record: StoryRecord = isRecord
+    ? { points, kpm: result.kpm, accuracy: result.accuracy, attempts: (prev?.attempts ?? 0) + 1, date: Date.now() }
+    : { ...prev, attempts: prev.attempts + 1 }
+  return {
+    profile: { ...profile, storyBest: { ...profile.storyBest, [key]: record } },
+    points,
+    isRecord,
+  }
+}
+
+/** Best result per profile for a story, highest points first. */
+export function leaderboard(profiles: Profile[], key: string): { profile: Profile; record: StoryRecord }[] {
+  return profiles
+    .flatMap((profile) => {
+      const record = profile.storyBest?.[key]
+      return record ? [{ profile, record }] : []
+    })
+    .sort((a, b) => b.record.points - a.record.points)
 }

@@ -15,9 +15,10 @@ interface Props {
   onStart: (moduleId: number, ex: ExerciseId) => void
   onSwitchProfile: () => void
   onParents: () => void
+  onStories: () => void
 }
 
-export function ModuleMap({ profile, onStart, onSwitchProfile, onParents }: Props) {
+export function ModuleMap({ profile, onStart, onSwitchProfile, onParents, onStories }: Props) {
   const next = nextExercise(profile)
   const exercises: ExerciseId[] = [...Array.from({ length: EXERCISES_PER_MODULE }, (_, i) => i), 'test']
 
@@ -49,6 +50,10 @@ export function ModuleMap({ profile, onStart, onSwitchProfile, onParents }: Prop
       ) : (
         <p className="banner">{da.allDone}</p>
       )}
+
+      <button className="story-entry secondary" onClick={onStories}>
+        🏁 {da.stories}
+      </button>
 
       <ol className="modules">
         {MODULES.map((m) => {

@@ -83,7 +83,8 @@ describe('stats', () => {
     expect(starsFor({ ...base, kpm: 30, accuracy: 0.94 }, 0.95, 30)).toBe(0)
     expect(starsFor({ ...base, kpm: 30, accuracy: 0.95 }, 0.95, 30)).toBe(1)
     expect(starsFor({ ...base, kpm: 36, accuracy: 0.97 }, 0.95, 30)).toBe(2)
-    expect(starsFor({ ...base, kpm: 42, accuracy: 0.99 }, 0.95, 30)).toBe(3)
+    expect(starsFor({ ...base, kpm: 44, accuracy: 0.99 }, 0.95, 30)).toBe(2)
+    expect(starsFor({ ...base, kpm: 45, accuracy: 0.98 }, 0.95, 30)).toBe(3)
     expect(isPassed({ ...base, kpm: 30, accuracy: 0.95 }, 0.95, 30)).toBe(true)
   })
 
