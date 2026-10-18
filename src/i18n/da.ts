@@ -1,6 +1,7 @@
 // All user-facing text. Add another file with the same shape for a new language.
 
 import type { Finger } from '../layouts/da'
+import type { AchievementType } from '../progress/achievements'
 
 export const da = {
   appTitle: 'Lær at skrive med 10 fingre',
@@ -24,6 +25,45 @@ export const da = {
   warmup: 'Opvarmning',
   stars: (n: number) => `${n} ⭐`,
   locked: 'Låst',
+
+  // Home
+  hello: (name: string) => `Hej ${name}!`,
+  training: 'Træning',
+  trainingIntro: 'Lær tasterne et modul ad gangen.',
+  competition: 'Konkurrence',
+  competitionIntro: 'Skriv en historie og kæmp om flest point.',
+  allModules: 'Se alle moduler',
+  toHome: 'Til forsiden',
+  streakDays: (n: number) => (n === 1 ? '1 dag i træk' : `${n} dage i træk`),
+  bestStreak: (n: number) => `Rekord: ${n}`,
+  streakToday: 'Skriv i dag for at holde gang i den!',
+  keystrokesToday: 'anslag i dag',
+  totalStars: 'stjerner i alt',
+  moduleProgress: (n: number, done: number, total: number) => `Modul ${n}: ${done} af ${total}`,
+  dailyGoal: (done: number, goal: number) => `Dagens mål: ${done} af ${goal} minutter`,
+  dailyGoalReached: 'Dagens mål er nået! 🎉',
+  todayAndWeek: 'I dag og denne uge',
+  todayLabel: 'I dag',
+  weekLabel: 'Denne uge',
+  keystrokesLabel: 'Anslag',
+  attemptsLabel: 'Øvelser',
+  minutesLabel: 'Minutter',
+  achievements: 'Mærker',
+  achievementsCount: (n: number, total: number) => `${n} af ${total}`,
+  newAchievement: (n: number) => (n === 1 ? 'Nyt mærke!' : 'Nye mærker!'),
+  achievementText: {
+    firstExercise: () => ({ title: 'Første øvelse', desc: 'Klar en øvelse.' }),
+    firstThreeStars: () => ({ title: 'Tre stjerner', desc: 'Få 3 stjerner i en øvelse.' }),
+    module: (n) => ({ title: `Modul ${n}`, desc: `Bestå testen i modul ${n}.` }),
+    streak: (n) => ({ title: `${n} dage i træk`, desc: `Skriv ${n} dage i træk.` }),
+    keystrokes: (n) => ({
+      title: `${n.toLocaleString('da-DK')} anslag`,
+      desc: `Skriv ${n.toLocaleString('da-DK')} anslag i alt.`,
+    }),
+    firstStory: () => ({ title: 'Første historie', desc: 'Skriv en historie i konkurrencen.' }),
+    allStories: (n) => ({ title: 'Bogorm', desc: `Skriv alle ${n} historier.` }),
+    allWords: () => ({ title: 'Ordmester', desc: 'Kan skrive alle de 1.000 mest almindelige ord.' }),
+  } satisfies Record<AchievementType, (n: number) => { title: string; desc: string }>,
 
   // Typing
   typeTheLine: 'Skriv teksten under hver linje.',
@@ -104,6 +144,7 @@ export const da = {
   baseKpm: 'Krævet hastighed i modul 1 (anslag/min)',
   kpmStep: 'Ekstra hastighed pr. modul',
   speedUnitSetting: 'Vis hastighed som',
+  dailyGoalSetting: 'Dagens mål (minutter, 0 = intet mål)',
   save: 'Gem',
   saved: 'Gemt',
   resetProgress: 'Nulstil fremskridt',

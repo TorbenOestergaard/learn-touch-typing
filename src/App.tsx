@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Home } from './components/Home'
 import { ModuleMap } from './components/ModuleMap'
 import { ParentSettings } from './components/ParentSettings'
 import { ProfilePicker } from './components/ProfilePicker'
@@ -17,6 +18,7 @@ import {
 } from './content/generator'
 import { starsFor, weakKeys, type SessionResult } from './engine/stats'
 import { da } from './i18n/da'
+import { newlyUnlocked, type Achievement } from './progress/achievements'
 import {
   createProfile,
   exerciseKey,
@@ -35,6 +37,7 @@ import {
 
 type Screen =
   | { name: 'profiles' }
+  | { name: 'home' }
   | { name: 'map' }
   | { name: 'parents' }
   | { name: 'stories'; storyId?: string; part?: StoryLength }
@@ -46,6 +49,7 @@ type Screen =
       result: SessionResult
       points: number
       isRecord: boolean
+      unlocked: Achievement[]
     }
   | { name: 'typing'; moduleId: number; ex: ExerciseId; seed: number; warmupKeys?: string[] }
   | {
@@ -58,6 +62,7 @@ type Screen =
       stars: number
       previous?: ExerciseRecord
       failsInRow: number
+      unlocked: Achievement[]
     }
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -75,7 +80,7 @@ export default function App() {
   const [store, setStore] = useState<Store>(() => loadStore())
   const [screen, setScreen] = useState<Screen>(() =>
     store.activeProfileId && store.profiles.some((p) => p.id === store.activeProfileId)
-      ? { name: 'map' }
+      ? { name: 'home' }
       : { name: 'profiles' },
   )
 
@@ -112,9 +117,8 @@ export default function App() {
       const { storyId, part } = storyTyping
       const key = storyKey(storyId, part)
       const recorded = recordStory(profile, key, result)
-      updateProfile(profile.id, () =>
-        logAttempt(recorded.profile, result, { kind: 'story', storyKey: key, points: recorded.points }),
-      )
+      const updated = logAttempt(recorded.profile, result, { kind: 'story', storyKey: key, points: recorded.points })
+      updateProfile(profile.id, () => updated)
       setScreen({
         name: 'story-result',
         storyId,
@@ -122,6 +126,7 @@ export default function App() {
         result,
         points: recorded.points,
         isRecord: recorded.isRecord,
+        unlocked: newlyUnlocked(profile, updated),
       })
     },
     [storyTyping, profile, updateProfile],
@@ -134,8 +139,20 @@ export default function App() {
       const kpm = requiredKpm(profile.settings, moduleId)
       const previous = profile.progress[exerciseKey(moduleId, ex)]
       if (warmupKeys) {
-        updateProfile(profile.id, (p) => logAttempt(p, result, { kind: 'warmup', moduleId }))
-        setScreen({ name: 'result', moduleId, ex, seed, warmupKeys, result, stars: 0, previous, failsInRow: 0 })
+        const updated = logAttempt(profile, result, { kind: 'warmup', moduleId })
+        updateProfile(profile.id, () => updated)
+        setScreen({
+          name: 'result',
+          moduleId,
+          ex,
+          seed,
+          warmupKeys,
+          result,
+          stars: 0,
+          previous,
+          failsInRow: 0,
+          unlocked: newlyUnlocked(profile, updated),
+        })
         return
       }
       const stars = starsFor(result, profile.settings.minAccuracy, kpm)
@@ -155,6 +172,7 @@ export default function App() {
         stars,
         previous,
         failsInRow: updated.progress[exerciseKey(moduleId, ex)].failsInRow,
+        unlocked: newlyUnlocked(profile, updated),
       })
     },
     [typing, profile, updateProfile],
@@ -167,12 +185,12 @@ export default function App() {
           profiles={store.profiles}
           onSelect={(id) => {
             setStore((s) => ({ ...s, activeProfileId: id }))
-            setScreen({ name: 'map' })
+            setScreen({ name: 'home' })
           }}
           onCreate={(name, avatar) => {
             const p = createProfile(name, avatar)
             setStore((s) => ({ ...s, profiles: [...s.profiles, p], activeProfileId: p.id }))
-            setScreen({ name: 'map' })
+            setScreen({ name: 'home' })
           }}
         />
       </main>
@@ -185,9 +203,7 @@ export default function App() {
         <ParentSettings
           profiles={store.profiles}
           initialProfileId={store.activeProfileId}
-          onSave={(id, settings, speedUnit) =>
-            updateProfile(id, (p) => ({ ...p, settings, prefs: { ...p.prefs, speedUnit } }))
-          }
+          onSave={(id, settings, prefs) => updateProfile(id, (p) => ({ ...p, settings, prefs: { ...p.prefs, ...prefs } }))}
           onReset={(id) => updateProfile(id, (p) => ({ ...p, progress: {}, keyErrors: {} }))}
           onDelete={(id) => {
             setStore((s) => ({
@@ -197,7 +213,7 @@ export default function App() {
             }))
             if (id === store.activeProfileId) setScreen({ name: 'profiles' })
           }}
-          onBack={() => setScreen({ name: 'map' })}
+          onBack={() => setScreen({ name: 'home' })}
         />
       </main>
     )
@@ -253,6 +269,7 @@ export default function App() {
           speedUnit={speedUnitOf(profile)}
           previous={screen.previous}
           failsInRow={screen.failsInRow}
+          unlocked={screen.unlocked}
           commonWords={ex === 'test' && screen.stars > 0 ? commonWordsAfter(moduleId) : undefined}
           hasNext={warmupKeys ? true : next !== null}
           onRetry={() => start(moduleId, ex, warmupKeys)}
@@ -272,7 +289,7 @@ export default function App() {
           profile={profile}
           initial={screen.storyId && screen.part ? { storyId: screen.storyId, part: screen.part } : undefined}
           onStart={(storyId, part) => setScreen({ name: 'story-typing', storyId, part, seed: newSeed() })}
-          onBack={() => setScreen({ name: 'map' })}
+          onBack={() => setScreen({ name: 'home' })}
         />
       </main>
     )
@@ -293,7 +310,7 @@ export default function App() {
           onToggleSound={toggleSound}
           compact
           onDone={onStoryDone}
-          onExit={() => setScreen({ name: 'map' })}
+          onExit={() => setScreen({ name: 'stories', storyId: screen.storyId, part: screen.part })}
         />
       </main>
     )
@@ -311,9 +328,22 @@ export default function App() {
           result={screen.result}
           points={screen.points}
           isRecord={screen.isRecord}
+          unlocked={screen.unlocked}
           onRetry={() => setScreen({ name: 'story-typing', storyId, part, seed: newSeed() })}
           onOther={() => setScreen({ name: 'stories', storyId, part })}
-          onMap={() => setScreen({ name: 'map' })}
+          onHome={() => setScreen({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (screen.name === 'map') {
+    return (
+      <main>
+        <ModuleMap
+          profile={profile}
+          onStart={(moduleId, ex) => start(moduleId, ex)}
+          onHome={() => setScreen({ name: 'home' })}
         />
       </main>
     )
@@ -321,12 +351,13 @@ export default function App() {
 
   return (
     <main>
-      <ModuleMap
+      <Home
         profile={profile}
-        onStart={(moduleId, ex) => start(moduleId, ex)}
+        onContinue={(moduleId, ex) => start(moduleId, ex)}
+        onTraining={() => setScreen({ name: 'map' })}
+        onStories={() => setScreen({ name: 'stories' })}
         onSwitchProfile={() => setScreen({ name: 'profiles' })}
         onParents={() => setScreen({ name: 'parents' })}
-        onStories={() => setScreen({ name: 'stories' })}
       />
     </main>
   )
