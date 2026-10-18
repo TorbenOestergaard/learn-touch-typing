@@ -26,6 +26,7 @@ import {
   logAttempt,
   recordAttempt,
   recordStory,
+  resetProgress,
   saveStore,
   soundOn,
   speedUnitOf,
@@ -204,7 +205,7 @@ export default function App() {
           profiles={store.profiles}
           initialProfileId={store.activeProfileId}
           onSave={(id, settings, prefs) => updateProfile(id, (p) => ({ ...p, settings, prefs: { ...p.prefs, ...prefs } }))}
-          onReset={(id) => updateProfile(id, (p) => ({ ...p, progress: {}, keyErrors: {} }))}
+          onReset={(id) => updateProfile(id, resetProgress)}
           onDelete={(id) => {
             setStore((s) => ({
               ...s,

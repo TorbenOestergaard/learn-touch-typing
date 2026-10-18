@@ -148,7 +148,8 @@ export const da = {
   save: 'Gem',
   saved: 'Gemt',
   resetProgress: 'Nulstil fremskridt',
-  confirmReset: (name: string) => `Vil du nulstille alle fremskridt for ${name}?`,
+  confirmReset: (name: string) =>
+    `Vil du nulstille alle fremskridt for ${name}? Stjerner, dage i træk, mærker og historie-point starter forfra.`,
   deleteProfile: 'Slet profil',
   confirmDelete: (name: string) => `Vil du slette profilen ${name}? Det kan ikke fortrydes.`,
   noProfiles: 'Der er ingen profiler endnu.',

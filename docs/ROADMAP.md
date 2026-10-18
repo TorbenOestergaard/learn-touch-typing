@@ -106,7 +106,7 @@ make it obvious what to do next and reward coming back every day.
 - **Navigation:** `home` is the default screen. `map` is the training view (back to home). The parent page, story picker and story results go back to home. Exercise results still go to the map. Leaving a story mid-typing goes back to the story picker. The typing screen's exit link now says "Tilbage".
 - **Logic:** `src/progress/streak.ts` (local-day streaks, `today`/`thisWeek`, Monday weeks, DST-safe `dayIndex`) and `src/progress/achievements.ts`. Keystrokes are `correct + errors`. "Øvelser" in the activity table counts every finished attempt, including stories and warm-ups.
 - **Achievements aren't stored.** `newlyUnlocked(before, after)` compares the profile before and after an attempt in `App.tsx`. No "seen" flags were needed. Old attempts from before v0.1.1 only count through `progress` and `storyBest` (first exercise, 3 stars, modules, stories); streaks and keystrokes need `history`.
-- **Gotcha:** "Nulstil fremskridt" on the parent page clears `progress` and `keyErrors` but not `history`, so streaks, keystrokes and history-based achievements survive a reset. Decide whether a reset should also clear the history.
+- **Reset:** "Nulstil fremskridt" (`resetProgress`) clears `progress`, `keyErrors`, `history` and `storyBest`, so streaks, badges and the profile's leaderboard entries start over. Settings and prefs are kept (user decision).
 - **Ideas left out:** a "new!" marker on the home screen, and a streak freeze. M2's re-test suggestion fits on the home screen, between the entries and the activity table.
 
 ## M2 – Progress over time: test history and graphs (0.3.0)

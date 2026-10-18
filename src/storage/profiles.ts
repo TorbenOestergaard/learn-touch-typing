@@ -141,6 +141,11 @@ export function recordAttempt(
   return { ...profile, progress: { ...profile.progress, [key]: record }, keyErrors }
 }
 
+/** Clears everything earned, so stars, streaks, badges and story results start over. Settings stay. */
+export function resetProgress(profile: Profile): Profile {
+  return { ...profile, progress: {}, keyErrors: {}, history: [], storyBest: {} }
+}
+
 export function isPassedEx(profile: Profile, moduleId: number, ex: ExerciseId): boolean {
   return profile.progress[exerciseKey(moduleId, ex)]?.passed ?? false
 }

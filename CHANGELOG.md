@@ -8,6 +8,7 @@
 - Keystrokes, attempts and minutes for today and this week.
 - 18 achievements (badges), computed from the history and progress, so earlier results count too. Newly unlocked ones are celebrated on the result screen.
 - The module map is now the training view, with a link back to the home screen.
+- "Nulstil fremskridt" on the parent page now also clears the attempt history and story results, so streaks, badges and leaderboard entries start over. Settings are kept.
 
 ## 0.1.1 – 2026-10-18
 
