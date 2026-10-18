@@ -1,0 +1,133 @@
+// Local profiles and progress, stored in localStorage. Versioned so it can migrate
+// to a backend later.
+
+import { DEFAULT_THRESHOLDS, EXERCISES_PER_MODULE, type Thresholds } from '../config'
+import { MODULES } from '../content/da/modules'
+import type { SessionResult } from '../engine/stats'
+
+export const STORAGE_KEY = 'ltt:v1'
+const VERSION = 1
+
+/** 0-based exercise index, or 'test' for the module test. */
+export type ExerciseId = number | 'test'
+
+export interface ExerciseRecord {
+  attempts: number
+  passed: boolean
+  bestStars: number
+  bestKpm: number
+  bestAccuracy: number
+  lastKpm: number
+  lastAccuracy: number
+  failsInRow: number
+}
+
+export interface Profile {
+  id: string
+  name: string
+  avatar: string
+  createdAt: number
+  settings: Thresholds
+  /** Keyed by exerciseKey(moduleId, exercise). */
+  progress: Record<string, ExerciseRecord>
+  /** Lifetime errors per character, for warm-ups. */
+  keyErrors: Record<string, number>
+}
+
+export interface Store {
+  version: number
+  profiles: Profile[]
+  activeProfileId: string | null
+}
+
+export const exerciseKey = (moduleId: number, ex: ExerciseId) => `${moduleId}:${ex}`
+
+export function emptyStore(): Store {
+  return { version: VERSION, profiles: [], activeProfileId: null }
+}
+
+export function loadStore(storage: Storage | undefined = globalThis.localStorage): Store {
+  try {
+    const raw = storage?.getItem(STORAGE_KEY)
+    if (!raw) return emptyStore()
+    const parsed = JSON.parse(raw) as Store
+    if (parsed.version !== VERSION || !Array.isArray(parsed.profiles)) return emptyStore()
+    return parsed
+  } catch {
+    return emptyStore()
+  }
+}
+
+export function saveStore(store: Store, storage: Storage | undefined = globalThis.localStorage) {
+  try {
+    storage?.setItem(STORAGE_KEY, JSON.stringify(store))
+  } catch {
+    // Private mode or full storage: progress just isn't kept.
+  }
+}
+
+export function createProfile(name: string, avatar: string): Profile {
+  return {
+    id: crypto.randomUUID(),
+    name: name.trim(),
+    avatar,
+    createdAt: Date.now(),
+    settings: { ...DEFAULT_THRESHOLDS },
+    progress: {},
+    keyErrors: {},
+  }
+}
+
+export function recordAttempt(
+  profile: Profile,
+  moduleId: number,
+  ex: ExerciseId,
+  result: SessionResult,
+  stars: number,
+): Profile {
+  const key = exerciseKey(moduleId, ex)
+  const prev = profile.progress[key]
+  const passed = stars > 0
+  const record: ExerciseRecord = {
+    attempts: (prev?.attempts ?? 0) + 1,
+    passed: (prev?.passed ?? false) || passed,
+    bestStars: Math.max(prev?.bestStars ?? 0, stars),
+    bestKpm: Math.max(prev?.bestKpm ?? 0, result.kpm),
+    bestAccuracy: Math.max(prev?.bestAccuracy ?? 0, result.accuracy),
+    lastKpm: result.kpm,
+    lastAccuracy: result.accuracy,
+    failsInRow: passed ? 0 : (prev?.failsInRow ?? 0) + 1,
+  }
+  const keyErrors = { ...profile.keyErrors }
+  for (const [ch, n] of Object.entries(result.errorsByChar)) {
+    keyErrors[ch] = (keyErrors[ch] ?? 0) + n
+  }
+  return { ...profile, progress: { ...profile.progress, [key]: record }, keyErrors }
+}
+
+export function isPassedEx(profile: Profile, moduleId: number, ex: ExerciseId): boolean {
+  return profile.progress[exerciseKey(moduleId, ex)]?.passed ?? false
+}
+
+/** An exercise is open when the one before it is passed (the module test counts for the next module). */
+export function isUnlocked(profile: Profile, moduleId: number, ex: ExerciseId): boolean {
+  if (ex === 'test') return isPassedEx(profile, moduleId, EXERCISES_PER_MODULE - 1)
+  if (ex > 0) return isPassedEx(profile, moduleId, ex - 1)
+  const idx = MODULES.findIndex((m) => m.id === moduleId)
+  return idx === 0 || isPassedEx(profile, MODULES[idx - 1].id, 'test')
+}
+
+/** The next exercise to do: the first unlocked one that isn't passed yet. */
+export function nextExercise(profile: Profile): { moduleId: number; ex: ExerciseId } | null {
+  for (const m of MODULES) {
+    const all: ExerciseId[] = [...Array.from({ length: EXERCISES_PER_MODULE }, (_, i) => i), 'test']
+    for (const ex of all) {
+      if (!isPassedEx(profile, m.id, ex)) return { moduleId: m.id, ex }
+    }
+  }
+  return null
+}
+
+export function totalStars(profile: Profile): number {
+  return Object.values(profile.progress).reduce((sum, r) => sum + r.bestStars, 0)
+}
