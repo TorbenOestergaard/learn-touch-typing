@@ -18,3 +18,6 @@ export const pct = (v: number) => `${Math.floor(v * 100)} %`
 
 /** Whole numbers with Danish thousands separators: 10.000. */
 export const formatCount = (n: number) => Math.round(n).toLocaleString('da-DK')
+
+/** Short Danish date: 12. okt. */
+export const formatDate = (ts: number) => new Date(ts).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })

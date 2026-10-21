@@ -4,6 +4,7 @@ import { MODULES } from '../content/da/modules'
 import { formatCount } from '../format'
 import { da } from '../i18n/da'
 import { achievementStatus } from '../progress/achievements'
+import { retestDue } from '../progress/series'
 import { streak, thisWeek, today, type Activity } from '../progress/streak'
 import {
   dailyGoalOf,
@@ -19,6 +20,7 @@ interface Props {
   profile: Profile
   onContinue: (moduleId: number, ex: ExerciseId) => void
   onTraining: () => void
+  onProgress: () => void
   onStories: () => void
   onSwitchProfile: () => void
   onParents: () => void
@@ -26,7 +28,7 @@ interface Props {
 
 const exercisesOf = (): ExerciseId[] => [...Array.from({ length: EXERCISES_PER_MODULE }, (_, i) => i), 'test']
 
-export function Home({ profile, onContinue, onTraining, onStories, onSwitchProfile, onParents }: Props) {
+export function Home({ profile, onContinue, onTraining, onProgress, onStories, onSwitchProfile, onParents }: Props) {
   // Fixed while the screen is open; the home screen remounts on each visit.
   const [now] = useState(() => Date.now())
   const history = profile.history ?? []
@@ -40,6 +42,7 @@ export function Home({ profile, onContinue, onTraining, onStories, onSwitchProfi
   const goal = dailyGoalOf(profile)
   const achievements = achievementStatus(profile, now)
   const unlocked = achievements.filter((a) => a.unlocked).length
+  const retest = retestDue(profile, now)[0]
 
   return (
     <div className="home">
@@ -118,8 +121,20 @@ export function Home({ profile, onContinue, onTraining, onStories, onSwitchProfi
         </section>
       </div>
 
+      {retest !== undefined && (
+        <div className="banner retest">
+          <p>{da.retestDue(retest)}</p>
+          <button onClick={() => onContinue(retest, 'test')}>{da.checkForm}</button>
+        </div>
+      )}
+
       <section className="home-section">
-        <h3>{da.todayAndWeek}</h3>
+        <div className="section-head">
+          <h3>{da.todayAndWeek}</h3>
+          <button className="link" onClick={onProgress}>
+            {da.seeProgress}
+          </button>
+        </div>
         <table className="activity">
           <thead>
             <tr>

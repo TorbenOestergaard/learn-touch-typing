@@ -1,7 +1,13 @@
 // Local profiles and progress, stored in localStorage. Versioned so it can migrate
 // to a backend later.
 
-import { DAILY_GOAL_MINUTES, DEFAULT_THRESHOLDS, EXERCISES_PER_MODULE, type Thresholds } from '../config'
+import {
+  DAILY_GOAL_MINUTES,
+  DEFAULT_THRESHOLDS,
+  EXERCISES_PER_MODULE,
+  OLD_DEFAULT_THRESHOLDS,
+  type Thresholds,
+} from '../config'
 import { MODULES } from '../content/da/modules'
 import type { SessionResult } from '../engine/stats'
 import type { SpeedUnit } from '../format'
@@ -39,7 +45,11 @@ export interface Profile {
   storyBest?: Record<string, StoryRecord>
   /** Every finished attempt, oldest first. Basis for streaks, progress graphs and leaderboards. */
   history?: Attempt[]
+  /** 2 from v0.3.0 (fixed speed requirement). Missing on older profiles until migrated. */
+  rulesVersion?: number
 }
+
+export const RULES_VERSION = 2
 
 export type AttemptKind = 'exercise' | 'test' | 'warmup' | 'story'
 
@@ -88,7 +98,7 @@ export function loadStore(storage: Storage | undefined = globalThis.localStorage
     if (!raw) return emptyStore()
     const parsed = JSON.parse(raw) as Store
     if (parsed.version !== VERSION || !Array.isArray(parsed.profiles)) return emptyStore()
-    return parsed
+    return { ...parsed, profiles: parsed.profiles.map(migrateProfile) }
   } catch {
     return emptyStore()
   }
@@ -102,6 +112,22 @@ export function saveStore(store: Store, storage: Storage | undefined = globalThi
   }
 }
 
+/**
+ * v0.3.0 replaced the rising speed requirement (30 + 5 per module) with a fixed 60. Profiles still on the
+ * old defaults get the new one; a speed a parent chose is kept. Progress is never touched.
+ */
+export function migrateProfile(profile: Profile): Profile {
+  if ((profile.rulesVersion ?? 1) >= RULES_VERSION) return profile
+  const { kpmStepPerModule, ...settings } = profile.settings
+  const untouched =
+    settings.baseKpm === OLD_DEFAULT_THRESHOLDS.baseKpm && kpmStepPerModule === OLD_DEFAULT_THRESHOLDS.kpmStepPerModule
+  return {
+    ...profile,
+    settings: untouched ? { ...settings, baseKpm: DEFAULT_THRESHOLDS.baseKpm } : settings,
+    rulesVersion: RULES_VERSION,
+  }
+}
+
 export function createProfile(name: string, avatar: string): Profile {
   return {
     id: crypto.randomUUID(),
@@ -111,6 +137,7 @@ export function createProfile(name: string, avatar: string): Profile {
     settings: { ...DEFAULT_THRESHOLDS },
     progress: {},
     keyErrors: {},
+    rulesVersion: RULES_VERSION,
   }
 }
 
@@ -120,14 +147,16 @@ export function recordAttempt(
   ex: ExerciseId,
   result: SessionResult,
   stars: number,
+  /** False for a test taken before the module's exercises are done: it is recorded but doesn't pass the module. */
+  counts = true,
 ): Profile {
   const key = exerciseKey(moduleId, ex)
   const prev = profile.progress[key]
   const passed = stars > 0
   const record: ExerciseRecord = {
     attempts: (prev?.attempts ?? 0) + 1,
-    passed: (prev?.passed ?? false) || passed,
-    bestStars: Math.max(prev?.bestStars ?? 0, stars),
+    passed: (prev?.passed ?? false) || (passed && counts),
+    bestStars: Math.max(prev?.bestStars ?? 0, counts ? stars : 0),
     bestKpm: Math.max(prev?.bestKpm ?? 0, result.kpm),
     bestAccuracy: Math.max(prev?.bestAccuracy ?? 0, result.accuracy),
     lastKpm: result.kpm,
@@ -150,17 +179,29 @@ export function isPassedEx(profile: Profile, moduleId: number, ex: ExerciseId): 
   return profile.progress[exerciseKey(moduleId, ex)]?.passed ?? false
 }
 
-/** An exercise is open when the one before it is passed (the module test counts for the next module). */
+/**
+ * Module tests are always open, so progress can be measured at any time. An exercise is open when the one
+ * before it is passed, and a module's first exercise when the previous module's test is passed.
+ */
 export function isUnlocked(profile: Profile, moduleId: number, ex: ExerciseId): boolean {
-  if (ex === 'test') return isPassedEx(profile, moduleId, EXERCISES_PER_MODULE - 1)
+  if (ex === 'test') return true
   if (ex > 0) return isPassedEx(profile, moduleId, ex - 1)
   const idx = MODULES.findIndex((m) => m.id === moduleId)
   return idx === 0 || isPassedEx(profile, MODULES[idx - 1].id, 'test')
 }
 
-/** The next exercise to do: the first unlocked one that isn't passed yet. */
+/** A passed test only finishes the module once its exercises are done (or it was finished before). */
+export function testCounts(profile: Profile, moduleId: number): boolean {
+  return isPassedEx(profile, moduleId, 'test') || isPassedEx(profile, moduleId, EXERCISES_PER_MODULE - 1)
+}
+
+/**
+ * The next exercise to do: the first one not passed yet, in the first module not finished. Finished modules are
+ * skipped, so an exercise added later doesn't send anyone back.
+ */
 export function nextExercise(profile: Profile): { moduleId: number; ex: ExerciseId } | null {
   for (const m of MODULES) {
+    if (isPassedEx(profile, m.id, 'test')) continue
     const all: ExerciseId[] = [...Array.from({ length: EXERCISES_PER_MODULE }, (_, i) => i), 'test']
     for (const ex of all) {
       if (!isPassedEx(profile, m.id, ex)) return { moduleId: m.id, ex }

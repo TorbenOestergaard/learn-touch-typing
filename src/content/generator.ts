@@ -233,8 +233,8 @@ function textFromStream(
   return lines
 }
 
-const POOL_SIZE = [0, 15, 30, 60, 120, 250]
-const NEW_SHARE = [0, 0.7, 0.6, 0.55, 0.5, 0.45]
+const POOL_SIZE = [0, 15, 30, 60, 120, 250, 300]
+const NEW_SHARE = [0, 0.7, 0.6, 0.55, 0.5, 0.45, 0.45]
 
 /** Exercise text for module `moduleId`, exercise `index` (0-based). */
 export function generateExercise(moduleId: number, index: number, seed: number): string[] {

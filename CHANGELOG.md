@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 – 2026-10-21
+
+- **Stricter passing, to build muscle memory:** an exercise now needs 60 correct keystrokes per minute (1 per second) in every module. It used to be 30, plus 5 per module. Profiles on the old default are moved to 60 automatically; a speed a parent chose is kept. Stars: 2 at 72, 3 at 90 (with 97 % / 98 % accuracy).
+- **A 7th, longer exercise in every module** (5 lines of real words). Modules already finished stay finished, and the new exercise is open there as extra practice.
+- **Module tests are always open**, in every module, so you can measure yourself at any time. A test passed before the module's exercises are done is saved and shown in the charts, but doesn't unlock the next module.
+- **Din udvikling:** a new page with speed and accuracy charts for each module's tests, and the average speed per week. Hover or tap a point to see the date and result.
+- **Tjek din form:** a button on finished modules, and a reminder on the home screen when a module's test is more than 14 days old.
+- The parent page no longer has "Ekstra hastighed pr. modul".
+
 ## 0.2.0 – 2026-10-18
 
 - A new home screen after picking a profile, with two entries: **Træning** (continue, or open the module map) and **Konkurrence** (stories).

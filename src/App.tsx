@@ -3,6 +3,7 @@ import { Home } from './components/Home'
 import { ModuleMap } from './components/ModuleMap'
 import { ParentSettings } from './components/ParentSettings'
 import { ProfilePicker } from './components/ProfilePicker'
+import { Progress } from './components/Progress'
 import { ResultScreen } from './components/ResultScreen'
 import { StoryPicker, StoryResult } from './components/Stories'
 import { TypingArea } from './components/TypingArea'
@@ -24,12 +25,14 @@ import {
   exerciseKey,
   loadStore,
   logAttempt,
+  nextExercise,
   recordAttempt,
   recordStory,
   resetProgress,
   saveStore,
   soundOn,
   speedUnitOf,
+  testCounts,
   type ExerciseId,
   type ExerciseRecord,
   type Profile,
@@ -40,6 +43,7 @@ type Screen =
   | { name: 'profiles' }
   | { name: 'home' }
   | { name: 'map' }
+  | { name: 'progress' }
   | { name: 'parents' }
   | { name: 'stories'; storyId?: string; part?: StoryLength }
   | { name: 'story-typing'; storyId: string; part: StoryLength; seed: number }
@@ -64,6 +68,8 @@ type Screen =
       previous?: ExerciseRecord
       failsInRow: number
       unlocked: Achievement[]
+      /** False for a test passed before the module's exercises were done. */
+      counted: boolean
     }
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -153,11 +159,13 @@ export default function App() {
           previous,
           failsInRow: 0,
           unlocked: newlyUnlocked(profile, updated),
+          counted: true,
         })
         return
       }
       const stars = starsFor(result, profile.settings.minAccuracy, kpm)
-      const updated = logAttempt(recordAttempt(profile, moduleId, ex, result, stars), result, {
+      const counted = ex !== 'test' || testCounts(profile, moduleId)
+      const updated = logAttempt(recordAttempt(profile, moduleId, ex, result, stars, counted), result, {
         kind: ex === 'test' ? 'test' : 'exercise',
         moduleId,
         ex: ex === 'test' ? undefined : ex,
@@ -174,6 +182,7 @@ export default function App() {
         previous,
         failsInRow: updated.progress[exerciseKey(moduleId, ex)].failsInRow,
         unlocked: newlyUnlocked(profile, updated),
+        counted,
       })
     },
     [typing, profile, updateProfile],
@@ -250,7 +259,8 @@ export default function App() {
 
   if (screen.name === 'result') {
     const { moduleId, ex, warmupKeys } = screen
-    const next = nextAfter(moduleId, ex)
+    // After a test that didn't count yet, carry on with the training instead of the locked next module.
+    const next = screen.counted ? nextAfter(moduleId, ex) : nextExercise(profile)
     const weak = [
       ...new Set([
         ...weakKeys(screen.result.errorsByChar, 3),
@@ -271,7 +281,8 @@ export default function App() {
           previous={screen.previous}
           failsInRow={screen.failsInRow}
           unlocked={screen.unlocked}
-          commonWords={ex === 'test' && screen.stars > 0 ? commonWordsAfter(moduleId) : undefined}
+          counted={screen.counted}
+          commonWords={ex === 'test' && screen.stars > 0 && screen.counted ? commonWordsAfter(moduleId) : undefined}
           hasNext={warmupKeys ? true : next !== null}
           onRetry={() => start(moduleId, ex, warmupKeys)}
           onNext={() => (warmupKeys ? start(moduleId, ex) : next && start(next.moduleId, next.ex))}
@@ -338,6 +349,18 @@ export default function App() {
     )
   }
 
+  if (screen.name === 'progress') {
+    return (
+      <main>
+        <Progress
+          profile={profile}
+          onStartTest={(moduleId) => start(moduleId, 'test')}
+          onBack={() => setScreen({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
   if (screen.name === 'map') {
     return (
       <main>
@@ -356,6 +379,7 @@ export default function App() {
         profile={profile}
         onContinue={(moduleId, ex) => start(moduleId, ex)}
         onTraining={() => setScreen({ name: 'map' })}
+        onProgress={() => setScreen({ name: 'progress' })}
         onStories={() => setScreen({ name: 'stories' })}
         onSwitchProfile={() => setScreen({ name: 'profiles' })}
         onParents={() => setScreen({ name: 'parents' })}

@@ -20,6 +20,8 @@ interface Props {
   /** The record before this attempt, for comparison. */
   previous?: ExerciseRecord
   failsInRow: number
+  /** False for a test passed before the module's exercises were done. */
+  counted: boolean
   /** Achievements this attempt unlocked. */
   unlocked: Achievement[]
   /** Shown when a module test is passed. */
@@ -38,8 +40,10 @@ export function ResultScreen(p: Props) {
   // Vary the praise a little; derived from the result so it is stable across renders.
   const title = p.isWarmup
     ? da.warmupDone
-    : p.isTest && passed
-      ? da.moduleDone(p.moduleId)
+    : p.isTest && passed && !p.counted
+      ? da.testNotCounted(p.moduleId)
+      : p.isTest && passed
+        ? da.moduleDone(p.moduleId)
       : passed
         ? da.passedTitle[Math.floor(p.result.durationMs) % da.passedTitle.length]
         : da.failedTitle
@@ -64,7 +68,7 @@ export function ResultScreen(p: Props) {
   }, [passed, p])
 
   return (
-    <div className={`result ${(p.isTest && passed) || p.unlocked.length > 0 ? 'celebrate' : ''}`}>
+    <div className={`result ${(p.isTest && passed && p.counted) || p.unlocked.length > 0 ? 'celebrate' : ''}`}>
       <h2>{title}</h2>
       {!p.isWarmup && (
         <div className="stars" aria-label={da.stars(p.stars)}>
