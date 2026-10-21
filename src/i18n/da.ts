@@ -91,10 +91,30 @@ export const da = {
   withShift: (finger: string) => `+ Shift med ${finger}`,
   space: 'mellemrum',
 
+  // Progress
+  progress: 'Din udvikling',
+  seeProgress: '📈 Se din udvikling',
+  progressIntro: 'Her kan du se, hvordan din hastighed og præcision udvikler sig, når du tager testene.',
+  weeklySpeed: 'Hastighed pr. uge',
+  weeklySpeedHint: (unit: string) => `Gennemsnit af alle øvelser og test i ugen, i ${unit}.`,
+  moduleTests: 'Testene',
+  noTests: 'Tag en test for at se din udvikling. Testene er altid åbne – også før du har lært tasterne.',
+  onePoint: 'Tag testen igen for at se en kurve.',
+  latest: 'Seneste',
+  best: 'Bedste',
+  attempts: (n: number) => (n === 1 ? '1 forsøg' : `${n} forsøg`),
+  weekOf: (date: string) => `Uge fra ${date}`,
+  showNumbers: 'Vis tallene',
+  date: 'Dato',
+  goalShort: 'Mål',
+  checkForm: 'Tjek din form',
+  retestDue: (n: number) => `Det er længe siden, du tog testen i modul ${n}. Tjek din form?`,
+
   // Results
   passedTitle: ['Godt klaret!', 'Flot!', 'Super!', 'Sådan!'],
   failedTitle: 'Næsten! Prøv igen',
   moduleDone: (n: number) => `Modul ${n} er klaret! 🎉`,
+  testNotCounted: (n: number) => `Flot test! Klar øvelserne i modul ${n} for at låse det næste modul op.`,
   warmupDone: 'Godt varmet op!',
   commonWords: (count: number, total: number) =>
     count >= total
@@ -141,8 +161,7 @@ export const da = {
   parentsTitle: 'Indstillinger for forældre',
   profile: 'Profil',
   minAccuracy: 'Krævet præcision (%)',
-  baseKpm: 'Krævet hastighed i modul 1 (anslag/min)',
-  kpmStep: 'Ekstra hastighed pr. modul',
+  baseKpm: 'Krævet hastighed (anslag/min, alle moduler)',
   speedUnitSetting: 'Vis hastighed som',
   dailyGoalSetting: 'Dagens mål (minutter, 0 = intet mål)',
   save: 'Gem',

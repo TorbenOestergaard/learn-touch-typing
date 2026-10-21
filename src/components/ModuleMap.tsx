@@ -3,6 +3,7 @@ import { MODULES } from '../content/da/modules'
 import { da } from '../i18n/da'
 import {
   exerciseKey,
+  isPassedEx,
   isUnlocked,
   nextExercise,
   totalStars,
@@ -54,6 +55,11 @@ export function ModuleMap({ profile, onStart, onHome }: Props) {
                   ))}
                   {m.introducesShift && <kbd>⇧</kbd>}
                 </div>
+                {isPassedEx(profile, m.id, 'test') && (
+                  <button className="secondary small-button" onClick={() => onStart(m.id, 'test')}>
+                    {da.checkForm}
+                  </button>
+                )}
               </div>
               <div className="bubbles">
                 {exercises.map((ex) => {

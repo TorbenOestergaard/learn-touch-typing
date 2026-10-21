@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { EXERCISES_PER_MODULE } from '../config'
 import type { SessionResult } from '../engine/stats'
 import {
   createProfile,
@@ -8,6 +9,8 @@ import {
   resetProgress,
   emptyStore,
   isUnlocked,
+  migrateProfile,
+  testCounts,
   loadStore,
   nextExercise,
   recordAttempt,
@@ -56,8 +59,8 @@ describe('profiles', () => {
     expect(isUnlocked(p, 1, 0)).toBe(true)
     expect(isUnlocked(p, 1, 1)).toBe(false)
     expect(isUnlocked(p, 2, 0)).toBe(false)
-    for (let i = 0; i < 6; i++) p = recordAttempt(p, 1, i, result(40, 1), 1)
-    expect(isUnlocked(p, 1, 'test')).toBe(true)
+    for (let i = 0; i < EXERCISES_PER_MODULE; i++) p = recordAttempt(p, 1, i, result(40, 1), 1)
+    expect(testCounts(p, 1)).toBe(true)
     expect(nextExercise(p)).toEqual({ moduleId: 1, ex: 'test' })
     p = recordAttempt(p, 1, 'test', result(40, 1), 1)
     expect(isUnlocked(p, 2, 0)).toBe(true)
@@ -97,5 +100,42 @@ describe('profiles', () => {
     expect(r).toMatchObject({ progress: {}, keyErrors: {}, history: [], storyBest: {} })
     expect(r.settings.baseKpm).toBe(20)
     expect(r.prefs).toEqual({ dailyGoalMinutes: 5 })
+  })
+
+  it('keeps every module test open, but an early pass does not finish the module', () => {
+    let p = createProfile('Ida', '🦊')
+    expect(isUnlocked(p, 5, 'test')).toBe(true)
+    expect(testCounts(p, 5)).toBe(false)
+    p = recordAttempt(p, 5, 'test', result(80, 1), 2, false)
+    expect(p.progress['5:test']).toMatchObject({ attempts: 1, passed: false, bestStars: 0, bestKpm: 80 })
+    expect(isUnlocked(p, 6, 0)).toBe(false)
+  })
+
+  it('skips finished modules when suggesting the next exercise', () => {
+    // Module 1 was finished with 6 exercises, before the 7th was added.
+    let p = createProfile('Ida', '🦊')
+    for (let i = 0; i < 6; i++) p = recordAttempt(p, 1, i, result(40, 1), 1)
+    p = recordAttempt(p, 1, 'test', result(40, 1), 1)
+    expect(isUnlocked(p, 1, 6)).toBe(true)
+    expect(nextExercise(p)).toEqual({ moduleId: 2, ex: 0 })
+    expect(testCounts(p, 1)).toBe(true)
+  })
+
+  it('migrates the old default speed but keeps a custom one', () => {
+    const old = { ...createProfile('Ida', '🦊'), rulesVersion: undefined }
+    const p = migrateProfile({ ...old, settings: { minAccuracy: 0.95, baseKpm: 30, kpmStepPerModule: 5 } })
+    expect(p.settings).toEqual({ minAccuracy: 0.95, baseKpm: 60 })
+    expect(p.rulesVersion).toBe(2)
+    const custom = migrateProfile({ ...old, settings: { minAccuracy: 0.9, baseKpm: 25, kpmStepPerModule: 5 } })
+    expect(custom.settings).toEqual({ minAccuracy: 0.9, baseKpm: 25 })
+    const chosen = { ...p, settings: { ...p.settings, baseKpm: 30 } }
+    expect(migrateProfile(chosen)).toBe(chosen)
+  })
+
+  it('migrates when loading', () => {
+    const old = { ...createProfile('Ida', '🦊'), rulesVersion: undefined }
+    old.settings = { minAccuracy: 0.95, baseKpm: 30, kpmStepPerModule: 5 }
+    saveStore({ ...emptyStore(), profiles: [old] })
+    expect(loadStore().profiles[0].settings.baseKpm).toBe(60)
   })
 })

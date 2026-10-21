@@ -27,7 +27,7 @@ session can pick it up with only this file and `CLAUDE.md`.
 |---|---|---|---|
 | M0 Foundation: app, modules, stories, attempt log | ✅ Done | 0.1.1 | – |
 | M1 Start page with streaks and achievements | ✅ Done | 0.2.0 | Run first; it changes the navigation |
-| M2 Progress over time: test history and graphs | Not started | 0.3.0 | M3, M4 (after M1) |
+| M2 Progress over time: test history and graphs, stricter passing | ✅ Done | 0.3.0 | M3, M4 (after M1) |
 | M3 Profile PINs | Not started | 0.4.0 | M2, M4 |
 | M4 Leaderboard with full history and sorting | Not started | 0.5.0 | M2, M3 |
 | M5 Accounts and sync across devices | Later | 1.0.0 | – |
@@ -37,7 +37,7 @@ M2, M3 and M4 mostly touch different files. Each still makes small edits to `App
 ## Design decisions (keep unless the user says otherwise)
 
 - **Audience:** kids aged 7 and 10 first, but it should work for anyone. Danish UI, Danish keyboard and Danish words.
-- **Learning path:** 7 modules, each with 6 exercises and a test.
+- **Learning path:** 7 modules, each with 7 exercises and a test (the 7th exercise, added in 0.3.0, is the longest). Module tests are always open.
   - Key order is `fjdk+eriu`, `sl+wo`, `gh+ty`, `aæø+Shift`, `nmvbc`, `påq`, `xz,.-`.
   - Capital letters only appear from module 4, when the pinky that presses Shift has been trained.
 - **Typing rules:**
@@ -47,7 +47,8 @@ M2, M3 and M4 mostly touch different files. Each still makes small edits to `App
   - Esc restarts.
 - **On-screen keyboard:** only in exercise 1 of each module, so learners don't get used to looking at it.
 - **Passing:**
-  - By default, 95 % accuracy and 30 keystrokes/min, plus 5 per module. Parents can adjust both per profile.
+  - By default, 95 % accuracy and 60 correct keystrokes/min, the same in every module (since 0.3.0; it was 30 + 5 per module). Parents can adjust both per profile.
+  - A module test only finishes the module (and unlocks the next) once the module's exercises are passed. Earlier test attempts are logged and charted but don't count.
   - Stars: 1 for a pass. 2 for 97 % accuracy and 1.2 × the required speed. 3 for 98 % and 1.5 ×.
 - **Motivation:**
   - Results compare with the last attempt and list the hardest keys.
@@ -126,6 +127,22 @@ make it obvious what to do next and reward coming back every day.
 **Questions for the user:** should the progress view also be visible to parents across all profiles?
 
 **Done when:** a profile with several test attempts sees a chart for each module, and the series logic is unit tested.
+
+**Handover notes (M2, done in 0.3.0):**
+- **User decisions:** the progress view shows the active profile only. The user also asked for stricter passing, because the
+  son moved on too fast to build muscle memory: a fixed 60 kpm in every module, a 7th (5-line) exercise per module,
+  tests always open in every module, and existing progress kept.
+- **Passing logic** (`src/storage/profiles.ts`):
+  - `isUnlocked(…, 'test')` is always true.
+  - `testCounts` = the test is already passed, or the last exercise is passed.
+  - `recordAttempt(…, counts)` with `counts = false` logs speed and attempts but not `passed` or `bestStars`. The result screen then shows "Flot test! Klar øvelserne…", and "Næste" continues with `nextExercise`.
+  - `nextExercise` skips modules whose test is passed, so the new 7th exercise is optional in modules finished before 0.3.0.
+- **Migration:** `migrateProfile` runs in `loadStore`. Profiles on the old defaults (30 + 5) get 60. A custom `baseKpm` is kept. `kpmStepPerModule` is dropped (still optional in `Thresholds` for old data). `rulesVersion: 2` marks a profile as migrated; bump `RULES_VERSION` for future rule changes.
+- **Charts:** `src/components/LineChart.tsx` is a plain-SVG single-series chart with a dashed goal line and hover/tap tooltips. Its viewBox follows the container width (ResizeObserver), so text stays the same size. There is one chart per measure; never use a dual axis. The speed axis tops out at a multiple of 60 kpm, so the ticks are round in kps too.
+- **Series:** `src/progress/series.ts`:
+  - `testSeries` and `weeklySpeed`. The weekly average covers exercises and tests (not stories or warm-ups), weighted by time.
+  - `retestDue` (14 days). A module passed before history existed counts as due. Home shows the oldest due module as a banner.
+- **Left out:** marking which test attempts "counted" in the charts, and a parent view across profiles.
 
 ## M3 – Profile PINs (0.4.0)
 

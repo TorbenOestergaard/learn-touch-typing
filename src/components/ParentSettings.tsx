@@ -73,7 +73,6 @@ function ThresholdForm({
 }) {
   const [accuracy, setAccuracy] = useState(Math.round(profile.settings.minAccuracy * 100))
   const [baseKpm, setBaseKpm] = useState(profile.settings.baseKpm)
-  const [step, setStep] = useState(profile.settings.kpmStepPerModule)
   const [unit, setUnit] = useState<SpeedUnit>(speedUnitOf(profile))
   const [goal, setGoal] = useState(dailyGoalOf(profile))
   const [saved, setSaved] = useState(false)
@@ -83,7 +82,7 @@ function ThresholdForm({
       className="settings-form"
       onSubmit={(e) => {
         e.preventDefault()
-        onSave({ minAccuracy: accuracy / 100, baseKpm, kpmStepPerModule: step }, { speedUnit: unit, dailyGoalMinutes: goal })
+        onSave({ minAccuracy: accuracy / 100, baseKpm }, { speedUnit: unit, dailyGoalMinutes: goal })
         setSaved(true)
       }}
       onChange={() => setSaved(false)}
@@ -95,10 +94,6 @@ function ThresholdForm({
       <label>
         {da.baseKpm}
         <input type="number" min={5} max={400} value={baseKpm} onChange={(e) => setBaseKpm(+e.target.value)} />
-      </label>
-      <label>
-        {da.kpmStep}
-        <input type="number" min={0} max={50} value={step} onChange={(e) => setStep(+e.target.value)} />
       </label>
       <label>
         {da.speedUnitSetting}
