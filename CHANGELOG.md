@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.1 – 2026-10-21
+
+Tests and progress, redesigned with help from a UX designer, a behavioural-design expert and a kid panel.
+
+- **The home screen has a Test card** between Træning and the competition: "Tag en test" opens a list of all module tests, with your best stars and speed and a recommended module first. One line under the button says what's next, e.g. "Modul 2: kun 4 fra ★★★".
+- **"Seneste test"** in the top strip always names the module, so speeds from different modules aren't mixed up. Tests with too many errors are left out.
+- **"Din udvikling"** is now a card on the home screen. The page has three views: **Enkel** (a speedometer), **Standard** (your record as a staircase that only goes up, over one bar per test) and **Avanceret** (accuracy against speed, with star zones). Tests under 95 % are hatched and don't count. "Dine dage" shows keystrokes for each of the last 7 days.
+- **After a test** the headline fits the result: a new star, a new record, holding your level, or a bit under your record ("Du har stadig ★★"). "Modul X er klaret!" only shows the first time. Three bars compare your first test, your record before and today.
+- **After every exercise and test** it says what the next star needs, with one pill for speed and one for accuracy, e.g. "Fart 86 / 90 · mangler 4" and "Præcision 97 % / 98 %".
+- **"Tjek din form"** is now "⏱️ Tag testen" on every module.
+- **The competition is called Lyntaster.** It has a new text for adults: Hamlet's "At være eller ikke være" in modernised Danish after Foersom's translation, with `? ! " :` on the keyboard.
+
 ## 0.3.0 – 2026-10-21
 
 - **Stricter passing, to build muscle memory:** an exercise now needs 60 correct keystrokes per minute (1 per second) in every module. It used to be 30, plus 5 per module. Profiles on the old default are moved to 60 automatically; a speed a parent chose is kept. Stars: 2 at 72, 3 at 90 (with 97 % / 98 % accuracy).

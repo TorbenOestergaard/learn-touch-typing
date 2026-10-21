@@ -1,5 +1,6 @@
-// Stories for the competition mode. Each is about 200 words and uses only keys from
-// the learning path: letters, capitals, space, comma, full stop and hyphen.
+// Texts for the speed competition (Lyntaster). Each is about 200 words. The first three use only keys
+// from the learning path: letters, capitals, space, comma, full stop and hyphen. The adult text also
+// uses ? ! " and : (Shift + +, 1, 2 and .).
 
 export interface Story {
   id: string
@@ -7,6 +8,8 @@ export interface Story {
   genre: string
   emoji: string
   text: string
+  /** For grown-ups: not needed for the kids' "all texts" badge. */
+  adults?: boolean
 }
 
 export const STORIES: Story[] = [
@@ -31,6 +34,16 @@ export const STORIES: Story[] = [
     emoji: '🎭',
     text: `Da Sofies forældre fortalte, at familien skulle flytte til Aalborg, troede hun først, at det var en misforståelse. Hun havde boet i det samme gule rækkehus i Odense, siden hun blev født, og hendes bedste veninde, Maja, boede blot tre huse længere nede ad vejen. Sofie løb op på sit værelse og smækkede døren så voldsomt, at billederne på væggen klirrede. De følgende uger var forfærdelige, og de to veninder lovede hinanden at skrive hver eneste dag. På flyttedagen regnede det. Sofie sad på bagsædet og betragtede de velkendte gader forsvinde bag den duggede rude. Den første dag på den nye skole var næsten uudholdelig. Klassekammeraterne kendte allerede hinanden, og frikvartererne virkede uendeligt lange. Men om fredagen satte en pige ved navn Amira sig ved siden af hende i kantinen og spurgte, om hun kunne lide håndbold. Om eftermiddagen tog Amira hende med til træning, og for første gang i flere uger glemte Sofie at være ked af det. Om aftenen skrev hun et langt brev til Maja. Til sidst tilføjede hun, at hun stadig savnede hende, men at det måske alligevel ikke var helt så slemt at være den nye pige.`,
   },
+  {
+    id: 'hamlet',
+    title: 'At være eller ikke være',
+    genre: 'Shakespeare · for voksne',
+    emoji: '👑',
+    adults: true,
+    // Hamlet 3.1, in modernised Danish after Peter Foersom's translation (1807). Rendered from memory
+    // and adapted to the keys above, so it is not a word-for-word quote of Foersom.
+    text: `Hamlet træder frem og siger stille: "At være eller ikke være, det er spørgsmålet: om det er ædlere for sindet at tåle den vrede skæbnes pile og slyngestene, eller at gribe våben mod et hav af plager og ende dem ved modstand? At dø, at sove, ikke mere, og med en søvn at sige, at vi ender hjertets kval og de tusinde naturlige stød, som kødet er arving til. Det er en fuldendelse, man inderligt må ønske. At dø, at sove! At sove, måske at drømme! Ja, der er knuden. For hvilke drømme der kan komme i dødens søvn, når vi har rystet dette jordiske hylster af os, det må få os til at standse. Det er den tanke, der gør ulykken så langlivet. For hvem ville tåle tidens svøbe og spot, den stærkes uret, den stoltes hån, den forsmåede kærligheds smerte, lovens nølen, embedets frækhed og de spark, som den tålmodige fortjeneste får af de uværdige, når han selv kunne finde sin fred med en blank dolk? Hvem ville bære byrderne og stønne og svede under et trættende liv?"`,
+  },
 ]
 
 export type StoryLength = 1 | 2 | 3
@@ -41,7 +54,7 @@ export const STORY_FRACTION: Record<StoryLength, number> = { 1: 0.25, 2: 0.5, 3:
 /** The start of the story for the chosen length, cut at the nearest sentence end. */
 export function storyPart(text: string, part: StoryLength): string {
   if (part === 3) return text
-  const sentences = text.split(/(?<=\.)\s+/)
+  const sentences = text.split(/(?<=[.?!])\s+/)
   const target = text.length * STORY_FRACTION[part]
   let out = ''
   for (const s of sentences) {

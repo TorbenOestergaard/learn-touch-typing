@@ -54,8 +54,8 @@ M2, M3 and M4 mostly touch different files. Each still makes small edits to `App
   - Results compare with the last attempt and list the hardest keys.
   - After 3 failed attempts in a row, a warm-up drill is offered.
   - Passing a module test shows how many of the 1,000 most common words the learner can now type.
-- **Stories (competition):**
-  - Three stories of about 200 words: easy, medium and hard by LIX.
+- **Lyntaster (the speed competition, called "Historie-konkurrence" before 0.3.1):**
+  - Three kids' texts of about 200 words (easy, medium and hard by LIX), plus "At være eller ikke være" for adults (Hamlet, modernised after Foersom, written from memory). The adult text also uses `? ! " :`; it is marked `adults: true` and isn't needed for the "Bogorm" badge.
   - Lengths are ¼, ½ or the whole story.
   - Points = speed × accuracy².
   - The leaderboard key carries a version (`storyKey`); bump `STORY_SET` whenever the texts change.
@@ -142,7 +142,15 @@ make it obvious what to do next and reward coming back every day.
 - **Series:** `src/progress/series.ts`:
   - `testSeries` and `weeklySpeed`. The weekly average covers exercises and tests (not stories or warm-ups), weighted by time.
   - `retestDue` (14 days). A module passed before history existed counts as due. Home shows the oldest due module as a banner.
-- **Left out:** marking which test attempts "counted" in the charts, and a parent view across profiles.
+- **Left out:** a parent view across profiles.
+
+**Follow-up (0.3.1): tests and progress redesign.** Run with a UX designer, a behavioural-design expert and a kid panel (ages 7, 10, 12); the owner picked finalist C. The design brief, the round outputs and the canvas are linked from the PR.
+- **Home:** three cards: Træning, ⏱️ Test (teal, "Tag en test", one data-driven nudge line from `profileTestNudge`) and ⚡ Lyntaster. The 4th strip tile is "Seneste test" for the latest *valid* test, always naming its module (speeds from different modules are never mixed). A "📈 Din udvikling" card shows first → best in that module.
+- **Test picker** (`tests` screen): every module, best stars and speed, the recommended module first. "Tag en test" where the module isn't given; "Tag testen" inside a module row.
+- **Progress page:** per-module cards with an Enkel / Standard / Avanceret switch (`prefs.chartMode`, default Standard): a gauge (`Gauge.tsx`), the record staircase over one bar per test (`RecordChart.tsx`), or accuracy × speed with nested star zones (`TargetPlot.tsx`). Tests under the pass accuracy are hatched/hollow and never raise the record. "Dine dage" (`DaysChart.tsx`, keystrokes per day for 7 days) replaced the weekly average line.
+- **Results:** `testHeadline()` picks the headline (module done only once; first test; fast but sloppy; not yet; new star; new record; holds; below record; lower tier). `StarLadder` shows the next star as one pill for speed and one for accuracy, after every exercise and test. Tests show `CompareBars`: first test, record before, today.
+- **Logic:** `src/progress/stars.ts` (tiers, `nextStarGap`, `starsOf`), `testResult.ts`, and `recordSteps`, `dailyActivity`, `latestTest`, `bestTests`, `testNudge` in `series.ts`, all with tests. `weeklySpeed` and `LineChart.tsx` were removed.
+- **Ideas not built:** a Wrapped-style monthly card (the 12-year-old's wish); a one-time first-result star explanation; the "Dagsform" copy was dropped on purpose (the kid panel disliked it).
 
 ## M3 – Profile PINs (0.4.0)
 

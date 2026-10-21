@@ -31,6 +31,9 @@ export interface AchievementStatus extends Achievement {
   progress?: { have: number; need: number }
 }
 
+/** The adult text isn't needed for the "all texts" badge. */
+const KIDS_STORIES = STORIES.filter((s) => !s.adults)
+
 export const STREAK_GOALS = [3, 7, 30]
 export const KEYSTROKE_GOALS = [1_000, 10_000, 100_000]
 
@@ -41,7 +44,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   ...STREAK_GOALS.map((n) => ({ id: `streak-${n}`, type: 'streak' as const, n, emoji: '🔥' })),
   ...KEYSTROKE_GOALS.map((n) => ({ id: `keys-${n}`, type: 'keystrokes' as const, n, emoji: '⌨️' })),
   { id: 'first-story', type: 'firstStory', n: 0, emoji: '📖' },
-  { id: 'all-stories', type: 'allStories', n: STORIES.length, emoji: '📚' },
+  { id: 'all-stories', type: 'allStories', n: KIDS_STORIES.length, emoji: '📚' },
   { id: 'all-words', type: 'allWords', n: 0, emoji: '🧠' },
 ]
 
@@ -78,7 +81,7 @@ export function achievementStatus(profile: Profile, now = Date.now()): Achieveme
       case 'firstStory':
         return { ...a, unlocked: stories.size > 0 }
       case 'allStories': {
-        const have = STORIES.filter((s) => stories.has(s.id)).length
+        const have = KIDS_STORIES.filter((s) => stories.has(s.id)).length
         return { ...a, unlocked: have >= a.n, progress: { have, need: a.n } }
       }
       case 'allWords':

@@ -29,6 +29,9 @@ export interface ExerciseRecord {
   failsInRow: number
 }
 
+/** How the progress page draws test results: a gauge, the record chart, or the target plot. */
+export type ChartMode = 'simple' | 'standard' | 'advanced'
+
 export interface Profile {
   id: string
   name: string
@@ -40,7 +43,7 @@ export interface Profile {
   /** Lifetime errors per character, for warm-ups. */
   keyErrors: Record<string, number>
   /** Added after v1 launched, so optional. */
-  prefs?: { sound?: boolean; speedUnit?: SpeedUnit; dailyGoalMinutes?: number }
+  prefs?: { sound?: boolean; speedUnit?: SpeedUnit; dailyGoalMinutes?: number; chartMode?: ChartMode }
   /** Best story result per storyKey(id, part). */
   storyBest?: Record<string, StoryRecord>
   /** Every finished attempt, oldest first. Basis for streaks, progress graphs and leaderboards. */
@@ -218,6 +221,7 @@ export const soundOn = (p: Profile) => p.prefs?.sound ?? true
 export const speedUnitOf = (p: Profile): SpeedUnit => p.prefs?.speedUnit ?? 'kpm'
 /** Minutes of typing per day to aim for. 0 hides the goal. */
 export const dailyGoalOf = (p: Profile): number => p.prefs?.dailyGoalMinutes ?? DAILY_GOAL_MINUTES
+export const chartModeOf = (p: Profile): ChartMode => p.prefs?.chartMode ?? 'standard'
 
 /** Story score: speed, with errors weighing in twice so accuracy pays off. */
 export function storyPoints(r: SessionResult): number {

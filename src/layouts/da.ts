@@ -30,8 +30,8 @@ export const SHIFT_RIGHT = 'ShiftRight'
 
 export const ROWS: KeyDef[][] = [
   [
-    k('1', 'lp'), k('2', 'lr'), k('3', 'lm'), k('4', 'li'), k('5', 'li'),
-    k('6', 'ri'), k('7', 'ri'), k('8', 'rm'), k('9', 'rr'), k('0', 'rp'), k('+', 'rp'),
+    k('1', 'lp', { shifted: '!' }), k('2', 'lr', { shifted: '"' }), k('3', 'lm'), k('4', 'li'), k('5', 'li'),
+    k('6', 'ri'), k('7', 'ri'), k('8', 'rm'), k('9', 'rr'), k('0', 'rp'), k('+', 'rp', { shifted: '?' }),
   ],
   [
     k('q', 'lp'), k('w', 'lr'), k('e', 'lm'), k('r', 'li'), k('t', 'li'),
