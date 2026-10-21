@@ -1,9 +1,10 @@
 import { EXERCISES_PER_MODULE } from '../config'
 import { MODULES } from '../content/da/modules'
 import { da } from '../i18n/da'
+import { bestTests } from '../progress/series'
+import { starsOf } from '../progress/stars'
 import {
   exerciseKey,
-  isPassedEx,
   isUnlocked,
   nextExercise,
   totalStars,
@@ -19,6 +20,11 @@ interface Props {
 
 export function ModuleMap({ profile, onStart, onHome }: Props) {
   const next = nextExercise(profile)
+  const best = bestTests(profile.history ?? [], profile.settings.minAccuracy)
+  const bestStars = (id: number) => {
+    const t = best.get(id)
+    return t ? starsOf(t, profile.settings) : 0
+  }
   const exercises: ExerciseId[] = [...Array.from({ length: EXERCISES_PER_MODULE }, (_, i) => i), 'test']
 
   return (
@@ -55,11 +61,10 @@ export function ModuleMap({ profile, onStart, onHome }: Props) {
                   ))}
                   {m.introducesShift && <kbd>⇧</kbd>}
                 </div>
-                {isPassedEx(profile, m.id, 'test') && (
-                  <button className="secondary small-button" onClick={() => onStart(m.id, 'test')}>
-                    {da.checkForm}
-                  </button>
-                )}
+                <button className="test-pill small-button module-test" onClick={() => onStart(m.id, 'test')}>
+                  ⏱️ {da.takeTheTest}
+                  {bestStars(m.id) > 0 && <span className="stars-inline"> {'★'.repeat(bestStars(m.id))}</span>}
+                </button>
               </div>
               <div className="bubbles">
                 {exercises.map((ex) => {

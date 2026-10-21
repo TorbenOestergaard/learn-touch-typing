@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { createProfile, recordAttempt, type Attempt, type Profile } from '../storage/profiles'
 import type { SessionResult } from '../engine/stats'
-import { retestDue, testSeries, weeklySpeed } from './series'
+import {
+  dailyActivity,
+  latestTest,
+  practiceSinceTest,
+  recordSteps,
+  retestDue,
+  testNudge,
+  testSeries,
+} from './series'
 
 /** Local time, October 2026. 12 and 19 Oct are Mondays. */
 const at = (d: number, h = 12) => new Date(2026, 9, d, h).getTime()
@@ -33,26 +41,6 @@ describe('testSeries', () => {
   })
 })
 
-describe('weeklySpeed', () => {
-  it('groups exercises and tests by Monday week, weighted by time', () => {
-    const h = [
-      attempt(at(12), { correct: 60, durationMs: 60_000 }),
-      attempt(at(18), { kind: 'test', correct: 180, durationMs: 120_000 }),
-      attempt(at(19), { correct: 100, durationMs: 60_000 }),
-      attempt(at(19), { kind: 'story', correct: 999 }),
-      attempt(at(19), { kind: 'warmup', correct: 999 }),
-    ]
-    expect(weeklySpeed(h)).toEqual([
-      { weekStart: new Date(2026, 9, 12).getTime(), avgKpm: 80, attempts: 2 },
-      { weekStart: new Date(2026, 9, 19).getTime(), avgKpm: 100, attempts: 1 },
-    ])
-  })
-
-  it('ignores zero-length attempts', () => {
-    expect(weeklySpeed([attempt(at(12), { durationMs: 0 })])).toEqual([])
-  })
-})
-
 describe('retestDue', () => {
   const passed = (p: Profile, m: number) => recordAttempt(p, m, 'test', result, 1)
 
@@ -74,5 +62,68 @@ describe('retestDue', () => {
 
   it('counts a module passed before history existed as due', () => {
     expect(retestDue(passed(createProfile('Ida', '🦊'), 1), at(21))).toEqual([1])
+  })
+})
+
+describe('recordSteps', () => {
+  it('keeps the running best of valid attempts only', () => {
+    const steps = recordSteps(
+      [52, 58, 50, 66, 70].map((kpm, i) => ({ at: i, kpm, accuracy: kpm === 66 ? 0.93 : 0.97, stars: 1 })),
+      0.95,
+    )
+    expect(steps.map((s) => [s.best, s.isRecord, s.valid])).toEqual([
+      [52, true, true],
+      [58, true, true],
+      [58, false, true],
+      [58, false, false],
+      [70, true, true],
+    ])
+  })
+})
+
+describe('dailyActivity', () => {
+  it('returns the last 7 local days, today last', () => {
+    const days = dailyActivity([attempt(at(18, 9)), attempt(at(16)), attempt(at(10))], at(18, 20))
+    expect(days).toHaveLength(7)
+    expect(days[6]).toMatchObject({ dayStart: new Date(2026, 9, 18).getTime(), keystrokes: 60, minutes: 1 })
+    expect(days[4].keystrokes).toBe(60)
+    expect(days[0].dayStart).toBe(new Date(2026, 9, 12).getTime())
+    expect(days.reduce((s, d) => s + d.keystrokes, 0)).toBe(120)
+  })
+})
+
+describe('latestTest', () => {
+  it('reports the latest test and the gain since the first valid one in its module', () => {
+    const h = [
+      attempt(at(1), { kind: 'test', moduleId: 1, kpm: 52 }),
+      attempt(at(2), { kind: 'test', moduleId: 2, kpm: 40 }),
+      attempt(at(3), { kind: 'test', moduleId: 1, kpm: 86 }),
+    ]
+    expect(latestTest(h, 0.95)).toMatchObject({ moduleId: 1, kpm: 86, gain: 34 })
+    expect(latestTest(h.slice(0, 2), 0.95)).toMatchObject({ moduleId: 2, gain: null })
+    expect(latestTest([...h, attempt(at(4), { kind: 'test', moduleId: 2, kpm: 120, accuracy: 0.9 })], 0.95)).toMatchObject({ moduleId: 1, kpm: 86 })
+    expect(latestTest([], 0.95)).toBeNull()
+  })
+})
+
+describe('testNudge', () => {
+  const noGap = () => null
+  it('asks for a first test', () => {
+    expect(testNudge([], 0.95, noGap)).toEqual({ kind: 'never' })
+  })
+
+  it('prefers a module close to the next star', () => {
+    const h = [attempt(at(1), { kind: 'test', moduleId: 2, kpm: 86 })]
+    expect(testNudge(h, 0.95, () => ({ gap: 4, stars: 3 }))).toEqual({ kind: 'nearStar', moduleId: 2, gap: 4, stars: 3 })
+  })
+
+  it('then a module practised since its last test, else the last test', () => {
+    const h = [
+      attempt(at(1), { kind: 'test', moduleId: 1, kpm: 70, stars: 1 }),
+      ...[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((d) => attempt(at(d), { moduleId: 3 })),
+    ]
+    expect(practiceSinceTest(h, 3)).toBe(15)
+    expect(testNudge(h, 0.95, noGap)).toEqual({ kind: 'practiced', moduleId: 3, minutes: 15 })
+    expect(testNudge(h.slice(0, 5), 0.95, noGap)).toEqual({ kind: 'last', moduleId: 1, kpm: 70, stars: 1 })
   })
 })

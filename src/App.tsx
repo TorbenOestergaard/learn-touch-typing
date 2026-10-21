@@ -4,8 +4,9 @@ import { ModuleMap } from './components/ModuleMap'
 import { ParentSettings } from './components/ParentSettings'
 import { ProfilePicker } from './components/ProfilePicker'
 import { Progress } from './components/Progress'
-import { ResultScreen } from './components/ResultScreen'
+import { ResultScreen, type TestInfo } from './components/ResultScreen'
 import { StoryPicker, StoryResult } from './components/Stories'
+import { TestPicker } from './components/TestPicker'
 import { TypingArea } from './components/TypingArea'
 import { EXERCISES_PER_MODULE, STORY_LINE_LENGTH, requiredKpm } from './config'
 import { MODULES, allowedKeys, getModule } from './content/da/modules'
@@ -20,10 +21,13 @@ import {
 import { starsFor, weakKeys, type SessionResult } from './engine/stats'
 import { da } from './i18n/da'
 import { newlyUnlocked, type Achievement } from './progress/achievements'
+import { nudgeModule, profileTestNudge, testSeries } from './progress/series'
+import { testHeadline, threeInARow } from './progress/testResult'
 import {
   createProfile,
   exerciseKey,
   loadStore,
+  isPassedEx,
   logAttempt,
   nextExercise,
   recordAttempt,
@@ -44,6 +48,7 @@ type Screen =
   | { name: 'home' }
   | { name: 'map' }
   | { name: 'progress' }
+  | { name: 'tests' }
   | { name: 'parents' }
   | { name: 'stories'; storyId?: string; part?: StoryLength }
   | { name: 'story-typing'; storyId: string; part: StoryLength; seed: number }
@@ -70,6 +75,7 @@ type Screen =
       unlocked: Achievement[]
       /** False for a test passed before the module's exercises were done. */
       counted: boolean
+      test?: TestInfo
     }
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 31)
@@ -165,6 +171,7 @@ export default function App() {
       }
       const stars = starsFor(result, profile.settings.minAccuracy, kpm)
       const counted = ex !== 'test' || testCounts(profile, moduleId)
+      const test = ex === 'test' ? testInfo(profile, moduleId, result, stars, counted) : undefined
       const updated = logAttempt(recordAttempt(profile, moduleId, ex, result, stars, counted), result, {
         kind: ex === 'test' ? 'test' : 'exercise',
         moduleId,
@@ -183,6 +190,7 @@ export default function App() {
         failsInRow: updated.progress[exerciseKey(moduleId, ex)].failsInRow,
         unlocked: newlyUnlocked(profile, updated),
         counted,
+        test,
       })
     },
     [typing, profile, updateProfile],
@@ -276,18 +284,20 @@ export default function App() {
           isTest={ex === 'test'}
           moduleId={moduleId}
           requiredKpm={requiredKpm(profile.settings, moduleId)}
-          minAccuracy={profile.settings.minAccuracy}
+          thresholds={profile.settings}
           speedUnit={speedUnitOf(profile)}
           previous={screen.previous}
           failsInRow={screen.failsInRow}
           unlocked={screen.unlocked}
           counted={screen.counted}
-          commonWords={ex === 'test' && screen.stars > 0 && screen.counted ? commonWordsAfter(moduleId) : undefined}
+          test={screen.test}
+          commonWords={screen.test?.headline.kind === 'moduleDone' ? commonWordsAfter(moduleId) : undefined}
           hasNext={warmupKeys ? true : next !== null}
           onRetry={() => start(moduleId, ex, warmupKeys)}
           onNext={() => (warmupKeys ? start(moduleId, ex) : next && start(next.moduleId, next.ex))}
           onWarmup={() => start(moduleId, ex, weak)}
           onMap={() => setScreen({ name: 'map' })}
+          onProgress={() => setScreen({ name: 'progress' })}
         />
       </main>
     )
@@ -355,7 +365,21 @@ export default function App() {
         <Progress
           profile={profile}
           onStartTest={(moduleId) => start(moduleId, 'test')}
+          onChartMode={(chartMode) => updateProfile(profile.id, (p) => ({ ...p, prefs: { ...p.prefs, chartMode } }))}
           onBack={() => setScreen({ name: 'home' })}
+        />
+      </main>
+    )
+  }
+
+  if (screen.name === 'tests') {
+    return (
+      <main>
+        <TestPicker
+          profile={profile}
+          recommended={nudgeModule(profileTestNudge(profile)) ?? nextExercise(profile)?.moduleId}
+          onStart={(moduleId) => start(moduleId, 'test')}
+          onClose={() => setScreen({ name: 'home' })}
         />
       </main>
     )
@@ -379,6 +403,7 @@ export default function App() {
         profile={profile}
         onContinue={(moduleId, ex) => start(moduleId, ex)}
         onTraining={() => setScreen({ name: 'map' })}
+        onTests={() => setScreen({ name: 'tests' })}
         onProgress={() => setScreen({ name: 'progress' })}
         onStories={() => setScreen({ name: 'stories' })}
         onSwitchProfile={() => setScreen({ name: 'profiles' })}
@@ -386,4 +411,29 @@ export default function App() {
       />
     </main>
   )
+}
+
+/** The headline and comparison for a test result, against the module's earlier tests. */
+function testInfo(profile: Profile, moduleId: number, result: SessionResult, stars: number, counted: boolean): TestInfo {
+  const minAccuracy = profile.settings.minAccuracy
+  const earlier = testSeries(profile.history ?? [], moduleId)
+  const finishedModule = counted && stars > 0 && !isPassedEx(profile, moduleId, 'test')
+  const headline = testHeadline(
+    { kpm: result.kpm, accuracy: result.accuracy, stars, finishedModule },
+    earlier,
+    minAccuracy,
+    requiredKpm(profile.settings, moduleId),
+  )
+  const valid = earlier.filter((t) => t.accuracy >= minAccuracy)
+  const record = valid.length ? Math.max(...valid.map((t) => t.kpm)) : null
+  const compare = valid.length
+    ? [
+        { label: da.compareFirst, kpm: valid[0].kpm },
+        ...(valid.length > 1 && record !== valid[0].kpm ? [{ label: da.compareRecord, kpm: record! }] : []),
+        result.accuracy >= minAccuracy
+          ? { label: da.compareToday, kpm: result.kpm, highlight: true }
+          : { label: da.compareToday, kpm: result.kpm, highlight: true, invalid: true, note: da.countsNo.toLowerCase() },
+      ]
+    : []
+  return { headline, compare, threeInARow: threeInARow(result, earlier, minAccuracy) }
 }
