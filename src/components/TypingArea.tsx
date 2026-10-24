@@ -65,7 +65,8 @@ export function TypingArea({
       }
       // Keep space from scrolling and keys from triggering buttons or quick-find.
       if (e.key.length === 1 || (mode === 'real' && e.key === 'Backspace')) e.preventDefault()
-      if (e.repeat) return
+      // Holding a key types it once, except Backspace in 'real' mode, which deletes on repeat like in a text editor.
+      if (e.repeat && !(mode === 'real' && e.key === 'Backspace')) return
       setSession((s) => pressKey(s, e.key, performance.now()))
     }
     window.addEventListener('keydown', onKey)

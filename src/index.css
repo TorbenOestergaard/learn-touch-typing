@@ -748,11 +748,66 @@ legend {
   background: color-mix(in srgb, var(--miss) 22%, var(--surface));
 }
 
-.length-picker {
+.map-links {
+  display: flex;
+  gap: 20px;
+}
+
+/* Lyntaster: the length and mode rows, labels in one column so the buttons line up. */
+.story-options {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.option-buttons {
   display: flex;
   gap: 8px;
-  align-items: center;
   flex-wrap: wrap;
+}
+
+.option-buttons button {
+  min-width: 10.5em;
+}
+
+@media (max-width: 560px) {
+  .story-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A hint shown above the element on hover and keyboard focus, from its data-tip attribute. */
+.tip {
+  position: relative;
+}
+
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(18em, 80vw);
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.tip:hover::after,
+.tip:focus-visible::after {
+  opacity: 1;
 }
 
 .leaderboard {

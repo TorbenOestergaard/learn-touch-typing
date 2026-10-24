@@ -98,36 +98,40 @@ export function StoryPicker({ profiles, profile, initial, onStart, onBack }: Pic
         })}
       </div>
 
-      <div className="length-picker" role="radiogroup" aria-label={da.length}>
+      <div className="story-options">
         <span className="muted">{da.length}:</span>
-        {LENGTHS.map((p) => (
-          <button
-            key={p}
-            role="radio"
-            aria-checked={p === part}
-            className={p === part ? '' : 'secondary'}
-            onClick={() => setPart(p)}
-          >
-            {da.lengths[p]}
-          </button>
-        ))}
+        <div className="option-buttons" role="radiogroup" aria-label={da.length}>
+          {LENGTHS.map((p) => (
+            <button
+              key={p}
+              role="radio"
+              aria-checked={p === part}
+              className={p === part ? '' : 'secondary'}
+              onClick={() => setPart(p)}
+            >
+              {da.lengths[p]}
+            </button>
+          ))}
+        </div>
+        <span className="muted">{da.storyMode}:</span>
+        <div className="option-buttons" role="radiogroup" aria-label={da.storyMode}>
+          {MODES.map((m) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={m === mode}
+              aria-description={da.storyModes[m].hint}
+              // The hint shows above the button on hover and focus (see .tip in index.css).
+              data-tip={da.storyModes[m].hint}
+              className={`tip ${m === mode ? '' : 'secondary'}`}
+              onClick={() => setMode(m)}
+            >
+              {da.storyModes[m].name}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="length-picker" role="radiogroup" aria-label={da.storyMode}>
-        <span className="muted">{da.storyMode}:</span>
-        {MODES.map((m) => (
-          <button
-            key={m}
-            role="radio"
-            aria-checked={m === mode}
-            className={m === mode ? '' : 'secondary'}
-            onClick={() => setMode(m)}
-          >
-            {da.storyModes[m].name}
-          </button>
-        ))}
-      </div>
-      <p className="muted small mode-hint">{da.storyModes[mode].hint}</p>
 
       <button className="big" onClick={() => onStart(storyId, part, mode)}>
         {da.start} →

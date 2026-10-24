@@ -56,7 +56,10 @@ M2, M3 and M4 mostly touch different files. Each still makes small edits to `App
   - After 3 failed attempts in a row, a warm-up drill is offered.
   - Passing a module test shows how many of the 1,000 most common words the learner can now type.
 - **Lyntaster (the speed competition, called "Historie-konkurrence" before 0.3.1):**
-  - Two modes since 0.3.2: Træning (strict) and Rigtig skrivning (Backspace, red fill), each with its own leaderboard.
+  - Two input methods ("Indtastningsmetode") since 0.3.2, each with its own leaderboard:
+    - "Som øvelser" (`strict`), called Træning until 0.3.4.
+    - "Normal skrivning" (`real`: Backspace, held down to delete repeatedly, and a red fill), called Rigtig skrivning until 0.3.4.
+  - The timer starts at the first key press, not when the screen opens or after Esc.
   - Three kids' texts of about 200 words (easy, medium and hard by LIX), plus "At være eller ikke være" for adults (Hamlet, modernised after Foersom, written from memory). The adult text also uses `? ! " :`; it is marked `adults: true` and isn't needed for the "Bogorm" badge.
   - Lengths are ¼, ½ or the whole story.
   - Points = speed × accuracy².

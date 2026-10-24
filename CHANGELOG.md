@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.4 – 2026-10-24
+
+- **Holding down Backspace** in Normal skrivning deletes one character after another, like in normal typing.
+- **Lyntaster has new names:**
+  - "Måde" is now **Indtastningsmetode**.
+  - "Træning" is **Som øvelser**.
+  - "Rigtig skrivning" is **Normal skrivning**.
+  - The length "Hele" is **Lang**.
+- **The method's explanation** now shows above the button when you hover over it.
+- **The length and method buttons line up.**
+- **A shorter introduction** on the Lyntaster page.
+- **On the home page,** "Forældre" is now **Indstillinger**, with more space between it and "Skift profil".
+
 ## 0.3.3 – 2026-10-24
 
 - **Rigtig skrivning: Backspace can go back to the line before.** If the cursor had already moved on to the next line, you couldn't fix a mistake at the end of the line above. Now Backspace goes back as far as you need.
