@@ -28,6 +28,7 @@ session can pick it up with only this file and `CLAUDE.md`.
 | M0 Foundation: app, modules, stories, attempt log | ✅ Done | 0.1.1 | – |
 | M1 Start page with streaks and achievements | ✅ Done | 0.2.0 | Run first; it changes the navigation |
 | M2 Progress over time: test history and graphs, stricter passing | ✅ Done | 0.3.0 | M3, M4 (after M1) |
+| 0.3.2 Lyntaster: "Rigtig skrivning" mode and adult texts | Not started | 0.3.2 | M3 (after M2) |
 | M3 Profile PINs | Not started | 0.4.0 | M2, M4 |
 | M4 Leaderboard with full history and sorting | Not started | 0.5.0 | M2, M3 |
 | M5 Accounts and sync across devices | Later | 1.0.0 | – |
@@ -41,7 +42,7 @@ M2, M3 and M4 mostly touch different files. Each still makes small edits to `App
   - Key order is `fjdk+eriu`, `sl+wo`, `gh+ty`, `aæø+Shift`, `nmvbc`, `påq`, `xz,.-`.
   - Capital letters only appear from module 4, when the pinky that presses Shift has been trained.
 - **Typing rules:**
-  - A wrong key doesn't move the cursor, and Backspace does nothing.
+  - A wrong key doesn't move the cursor, and Backspace does nothing. (From 0.3.2, Lyntaster also has a "Rigtig skrivning" mode where wrong keys are written and fixed with Backspace; exercises and tests keep the strict rule.)
   - **No stats are shown while typing**, only afterwards.
   - Every line except the last ends with a space, shown faintly as ␣.
   - Esc restarts.
@@ -151,6 +152,47 @@ make it obvious what to do next and reward coming back every day.
 - **Results:** `testHeadline()` picks the headline (module done only once; first test; fast but sloppy; not yet; new star; new record; holds; below record; lower tier). `StarLadder` shows the next star as one pill for speed and one for accuracy, after every exercise and test. Tests show `CompareBars`: first test, record before, today.
 - **Logic:** `src/progress/stars.ts` (tiers, `nextStarGap`, `starsOf`), `testResult.ts`, and `recordSteps`, `dailyActivity`, `latestTest`, `bestTests`, `testNudge` in `series.ts`, all with tests. `weeklySpeed` and `LineChart.tsx` were removed.
 - **Ideas not built:** a Wrapped-style monthly card (the 12-year-old's wish); a one-time first-result star explanation; the "Dagsform" copy was dropped on purpose (the kid panel disliked it).
+
+## 0.3.2 – Lyntaster: "Rigtig skrivning" mode and adult texts
+
+**Why:** Lyntaster today uses the training rules: a wrong key stops the cursor and beeps. That is good for learning
+but isn't how real typing works, where you notice your own mistakes and fix them with Backspace. Adults also want
+harder, realistic texts to compete on.
+
+**Scope:**
+- **Two ways to run a Lyntaster text,** picked in the story picker next to the length:
+  - **Træning** (the current rules, the default): a wrong key doesn't move the cursor, a sound plays, Backspace does nothing.
+  - **Rigtig skrivning** ("real writing"): every key is written, also wrong ones, and the cursor moves on. Wrong characters are shown with a **red fill colour** (background, not just text colour) until they are deleted with Backspace and retyped. No beep in this mode; the fill is the feedback.
+  - Remember the last choice per profile (a new optional `prefs.storyMode`, default `'strict'`).
+  - The "no live stats while typing" rule still holds; the red fill only marks the characters.
+- **Engine** (`src/engine/session.ts`): add a `mode: 'strict' | 'real'` to the session (default `'strict'`, so exercises and tests are unchanged).
+  - In `real` mode, keep the typed text per line, handle `Backspace`, and track which positions are wrong.
+  - Suggested rules (confirm with the user, see questions): a line advances once as many characters as the line has are typed; Backspace works within the current line only; the text finishes when the last line is typed.
+  - Stats: `errors` counts every wrong key press, also ones later fixed, so accuracy = correct / (correct + errors) as today. Uncorrected wrong characters at the end also count as errors and never as correct. Backspace presses don't count as keystrokes for speed. Points stay speed × accuracy².
+  - `errorsByChar` and the hardest-keys list work in both modes.
+- **Highscores per mode:**
+  - The leaderboard and `storyBest` are kept apart per mode. Extend `storyKey(id, part, mode)`: `strict` keeps today's key (`id:part:v2`) so existing records survive; `real` appends `:real`.
+  - Log the mode on the attempt (a new optional `Attempt.storyMode`, missing = `'strict'`).
+  - The leaderboard shows the chosen mode's list, with the mode named in its heading. The result screen says which mode was run.
+  - Achievements ("Bogorm", first story) count stories finished in either mode.
+- **Two new adult texts** (`adults: true`, not needed for "Bogorm"):
+  - **One in English**, with many of the letters that are rare in Danish: z, q, x, w, c (e.g. *quiz, jazz, zoo, oxygen, exquisite, question*). Plain ASCII; it may use `' ? ! " :`. Check that `'` maps to a key in `src/layouts/da.ts`.
+  - **One in Danish**, a newspaper or essay style text for adults, using the whole Danish keyboard taught so far plus `? ! " :`.
+  - **LIX 40–50** for both, like newspapers and non-fiction for adults (the kids' texts are below 25, 25–35 and 35–45). Check with `lix()` in a test, as `stories.test.ts` does for the existing texts. Note that LIX is defined for Danish/Swedish; for the English text it is only a rough guide.
+  - About 200 words like the others, unless the user wants them longer.
+  - **Original texts**, not quotes from copyrighted works. They must pass the blocklist and rudeness filter.
+  - Adding texts doesn't change existing ones, so `STORY_SET` stays at 2.
+  - The UI is still Danish; only the English text's content is English. Give it a Danish title and genre label, e.g. "På engelsk · for voksne".
+
+**Where:** `src/engine/session.ts` (+ tests), `src/components/TypingArea.tsx` (red fill, Backspace, mute in `real` mode), `src/components/Stories.tsx`, `src/components/ResultScreen.tsx`, `src/content/da/stories.ts` (+ `stories.test.ts`), `src/storage/profiles.ts` (`storyKey`, `leaderboard`, optional `prefs.storyMode` and `Attempt.storyMode`), `App.tsx`, `src/i18n/da.ts`.
+
+**Questions for the user:**
+- In Rigtig skrivning, may a line be left with uncorrected errors (as suggested above), or must every line be correct before moving on?
+- Should the Rigtig skrivning mode also be offered for module tests later, or only for Lyntaster?
+- Length of the adult texts: about 200 words like the others, or longer?
+- Any topic wishes for the two adult texts?
+
+**Done when:** a Lyntaster text can be run in both modes; Rigtig skrivning shows wrong characters with a red fill and lets you fix them with Backspace; the leaderboards are kept apart per mode with existing records intact; the English and Danish adult texts are in, with LIX 40–50 checked by a test; the engine changes are unit tested; and the release is 0.3.2 with a `CHANGELOG.md` entry.
 
 ## M3 – Profile PINs (0.4.0)
 
