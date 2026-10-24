@@ -12,6 +12,8 @@
   --typed: #a9aebb;
   --cursor: #2f6fde;
   --flash: #ffd2c4;
+  --wrong-bg: #f7b4a4;
+  --wrong-text: #7a1d0a;
   --warn-bg: #fff3d6;
   --test: #0f7d82;
   --test-soft: #e6f4f4;
@@ -56,6 +58,8 @@
     --typed: #5d6473;
     --cursor: #7ea8ff;
     --flash: #6b3426;
+    --wrong-bg: #8a3220;
+    --wrong-text: #ffe4dc;
     --warn-bg: #3d3420;
     --test: #3fb8bd;
     --test-soft: #1d3436;
@@ -801,6 +805,18 @@ legend {
 .rank {
   margin-top: 6px;
   font-weight: 600;
+}
+
+/* Rigtig skrivning: wrong characters (typed and expected) get a red fill until fixed. */
+.ex-input .wrong,
+.ex-text .wrong {
+  background: var(--wrong-bg);
+  color: var(--wrong-text);
+  border-radius: 3px;
+}
+
+.ex-text .eol.wrong {
+  opacity: 1;
 }
 
 /* The space at the end of a line, shown faintly so it isn't missed. */

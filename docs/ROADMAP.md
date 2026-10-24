@@ -28,7 +28,7 @@ session can pick it up with only this file and `CLAUDE.md`.
 | M0 Foundation: app, modules, stories, attempt log | ✅ Done | 0.1.1 | – |
 | M1 Start page with streaks and achievements | ✅ Done | 0.2.0 | Run first; it changes the navigation |
 | M2 Progress over time: test history and graphs, stricter passing | ✅ Done | 0.3.0 | M3, M4 (after M1) |
-| 0.3.2 Lyntaster: "Rigtig skrivning" mode and adult texts | Not started | 0.3.2 | M3 (after M2) |
+| 0.3.2 Lyntaster: "Rigtig skrivning" mode and adult texts | ✅ Done | 0.3.2 | M3 (after M2) |
 | M3 Profile PINs | Not started | 0.4.0 | M2, M4 |
 | M4 Leaderboard with full history and sorting | Not started | 0.5.0 | M2, M3 |
 | M5 Accounts and sync across devices | Later | 1.0.0 | – |
@@ -56,6 +56,7 @@ M2, M3 and M4 mostly touch different files. Each still makes small edits to `App
   - After 3 failed attempts in a row, a warm-up drill is offered.
   - Passing a module test shows how many of the 1,000 most common words the learner can now type.
 - **Lyntaster (the speed competition, called "Historie-konkurrence" before 0.3.1):**
+  - Two modes since 0.3.2: Træning (strict) and Rigtig skrivning (Backspace, red fill), each with its own leaderboard.
   - Three kids' texts of about 200 words (easy, medium and hard by LIX), plus "At være eller ikke være" for adults (Hamlet, modernised after Foersom, written from memory). The adult text also uses `? ! " :`; it is marked `adults: true` and isn't needed for the "Bogorm" badge.
   - Lengths are ¼, ½ or the whole story.
   - Points = speed × accuracy².
@@ -193,6 +194,16 @@ harder, realistic texts to compete on.
 - Any topic wishes for the two adult texts?
 
 **Done when:** a Lyntaster text can be run in both modes; Rigtig skrivning shows wrong characters with a red fill and lets you fix them with Backspace; the leaderboards are kept apart per mode with existing records intact; the English and Danish adult texts are in, with LIX 40–50 checked by a test; the engine changes are unit tested; and the release is 0.3.2 with a `CHANGELOG.md` entry.
+
+**Handover notes (0.3.2, done):**
+- **User decisions:** lines may be left with errors; the mode is for Lyntaster only (exercises and tests stay strict); the adult texts are about 200 words; the topics were Claude's choice.
+- **Engine:** `createSession(lines, mode)`. In `real` mode, `pressKeyReal` keeps `typed[]` per line. `correct` counts the correct characters in the text as it stands, so deleting a correct one takes it back off. `errors` counts every wrong press, also ones fixed later. `wrongPositions` and `uncorrectedErrors` derive the red marks.
+- **Scoring:** `computeResult` adds `uncorrected × (UNCORRECTED_ERROR_WEIGHT − 1)` to `errors` (the weight is 3, in `config.ts`), so not fixing an error costs more than fixing it. Without the extra weight, fixing would cost time and gain nothing. `SessionResult.uncorrected` is optional, so old test fixtures still compile. The UI text says "tre gange"; update `i18n/da.ts` if the weight changes.
+- **Storage:** `storyKey(id, part, mode)`. `strict` keeps `id:part:v2`; `real` appends `:real`. Achievements use `key.split(':')[0]`, so both modes count. New optional `prefs.storyMode` (`storyModeOf`) and `Attempt.storyMode`.
+- **UI:** a "Måde" radio row under the length in `StoryPicker`, with a one-line hint. The leaderboard heading names the mode. `TypingArea` takes `mode`: Backspace is forwarded, there's no beep or flash, and `.wrong` gets a red fill (`--wrong-bg`/`--wrong-text`, also in dark mode) in both the text and the input row.
+- **Texts:** `bier` (Danish newspaper style, LIX 46) and `zebra` (English, LIX 48, at least 5 of each of z q x w c, checked by a test). The Danish layout has no `'` key, so the English text has no apostrophes. Neither text quotes real people or gives real figures.
+- **Testing tip:** the browser tool's `type` action doesn't fire `keydown` here. Dispatch `KeyboardEvent('keydown')` on `window` from `javascript_tool` instead.
+- **Left out:** Rigtig skrivning for module tests; moving back to the previous line with Backspace.
 
 ## M3 – Profile PINs (0.4.0)
 

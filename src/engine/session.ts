@@ -1,7 +1,16 @@
 // Pure typing-session state. The UI feeds key presses in; nothing here touches the DOM.
 
+/**
+ * 'strict' (training): a wrong key doesn't move the cursor and Backspace does nothing.
+ * 'real' (Rigtig skrivning, Lyntaster only): every key is written and wrong characters are fixed with Backspace.
+ */
+export type TypingMode = 'strict' | 'real'
+
 export interface SessionState {
+  mode: TypingMode
   lines: string[]
+  /** What was typed on each line, wrong characters included. Only used in 'real' mode. */
+  typed: string[]
   line: number
   col: number
   correct: number
@@ -27,12 +36,14 @@ const US_EQUIVALENT: Record<string, string> = {
   '-': '/',
 }
 
-export function createSession(lines: string[]): SessionState {
+export function createSession(lines: string[], mode: TypingMode = 'strict'): SessionState {
   if (lines.length === 0 || lines.some((l) => l.length === 0)) {
     throw new Error('Session needs non-empty lines')
   }
   return {
+    mode,
     lines,
+    typed: lines.map(() => ''),
     line: 0,
     col: 0,
     correct: 0,
@@ -54,12 +65,27 @@ export function isFinished(s: SessionState): boolean {
   return s.finishedAt !== null
 }
 
+/** Positions on a line that were typed wrong and not yet fixed. */
+export function wrongPositions(s: SessionState, line: number): number[] {
+  const out: number[] = []
+  const typed = s.typed[line]
+  for (let i = 0; i < typed.length; i++) if (typed[i] !== s.lines[line][i]) out.push(i)
+  return out
+}
+
+/** Wrong characters left in the text. Always 0 in 'strict' mode. */
+export function uncorrectedErrors(s: SessionState): number {
+  return s.lines.reduce((n, _, i) => n + wrongPositions(s, i).length, 0)
+}
+
 /**
  * Applies one key press. `key` is KeyboardEvent.key; anything that is not a single
- * character (Shift, Dead, Backspace, ...) is ignored.
+ * character (Shift, Dead, Backspace, ...) is ignored, except Backspace in 'real' mode.
  */
 export function pressKey(s: SessionState, key: string, now: number): SessionState {
-  if (s.finishedAt !== null || [...key].length !== 1) return s
+  if (s.finishedAt !== null) return s
+  if (s.mode === 'real') return pressKeyReal(s, key, now)
+  if ([...key].length !== 1) return s
 
   const expected = s.lines[s.line][s.col]
   const startedAt = s.startedAt ?? now
@@ -87,4 +113,52 @@ export function pressKey(s: SessionState, key: string, now: number): SessionStat
     }
   }
   return { ...s, startedAt, line, col, finishedAt, correct: s.correct + 1 }
+}
+
+/**
+ * 'real' mode: wrong characters are written too. A line moves on once it is fully typed, errors or not;
+ * Backspace only works within the current line. `correct` counts the correct characters in the text as it
+ * stands, so deleting a correct character takes it back off.
+ */
+function pressKeyReal(s: SessionState, key: string, now: number): SessionState {
+  const line = s.lines[s.line]
+  const typed = s.typed[s.line]
+
+  if (key === 'Backspace') {
+    if (typed.length === 0) return s
+    const removed = typed.length - 1
+    const wasCorrect = typed[removed] === line[removed]
+    return {
+      ...s,
+      typed: s.typed.map((t, i) => (i === s.line ? t.slice(0, -1) : t)),
+      col: removed,
+      correct: s.correct - (wasCorrect ? 1 : 0),
+    }
+  }
+  if ([...key].length !== 1) return s
+
+  const expected = line[s.col]
+  const startedAt = s.startedAt ?? now
+  const ok = key === expected
+  let next: SessionState = {
+    ...s,
+    startedAt,
+    typed: s.typed.map((t, i) => (i === s.line ? t + key : t)),
+    col: s.col + 1,
+    correct: s.correct + (ok ? 1 : 0),
+  }
+  if (!ok) {
+    next = {
+      ...next,
+      errors: s.errors + 1,
+      errorsByChar: { ...s.errorsByChar, [expected]: (s.errorsByChar[expected] ?? 0) + 1 },
+      errorTick: s.errorTick + 1,
+      wrongLayout: s.wrongLayout || US_EQUIVALENT[expected] === key,
+    }
+  }
+  if (next.col >= line.length) {
+    if (s.line + 1 < s.lines.length) next = { ...next, line: s.line + 1, col: 0 }
+    else next = { ...next, finishedAt: now }
+  }
+  return next
 }

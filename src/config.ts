@@ -28,6 +28,13 @@ export const LINE_LENGTH = 36
 /** Stories use smaller text, so lines can be longer. */
 export const STORY_LINE_LENGTH = 56
 
+/**
+ * In Rigtig skrivning, a wrong character left unfixed counts as this many errors (its key press included),
+ * so fixing a mistake with Backspace pays off.
+ */
+// The Lyntaster texts in i18n/da.ts say "tre gange"; update them if this changes.
+export const UNCORRECTED_ERROR_WEIGHT = 3
+
 /** Star thresholds, relative to the required speed. */
 export const STARS = {
   two: { accuracy: 0.97, speedFactor: 1.2 },

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createSession, expectedChar, isFinished, pressKey } from './session'
+import { UNCORRECTED_ERROR_WEIGHT } from '../config'
+import { createSession, expectedChar, isFinished, pressKey, uncorrectedErrors, wrongPositions } from './session'
 import { computeResult, isPassed, starsFor, weakKeys } from './stats'
 
 function typeAll(lines: string[], keys: string[], step = 1000) {
@@ -90,5 +91,69 @@ describe('stats', () => {
 
   it('lists the weakest keys first', () => {
     expect(weakKeys({ a: 1, b: 5, c: 3, d: 0 })).toEqual(['b', 'c', 'a'])
+  })
+})
+
+describe('real writing mode', () => {
+  const real = (lines: string[], keys: string[], step = 1000) => {
+    let s = createSession(lines, 'real')
+    let t = 0
+    for (const k of keys) {
+      s = pressKey(s, k, t)
+      t += step
+    }
+    return s
+  }
+
+  it('writes wrong keys and moves the cursor on', () => {
+    const s = real(['de'], ['x'])
+    expect(s.col).toBe(1)
+    expect(s.typed[0]).toBe('x')
+    expect(s.errors).toBe(1)
+    expect(s.errorsByChar).toEqual({ d: 1 })
+    expect(wrongPositions(s, 0)).toEqual([0])
+  })
+
+  it('fixes a wrong character with Backspace', () => {
+    const s = real(['de'], ['x', 'Backspace', 'd', 'e'])
+    expect(isFinished(s)).toBe(true)
+    expect(s.correct).toBe(2)
+    expect(s.errors).toBe(1)
+    expect(uncorrectedErrors(s)).toBe(0)
+  })
+
+  it('takes a deleted correct character back off the count', () => {
+    const s = real(['de'], ['d', 'Backspace'])
+    expect(s.correct).toBe(0)
+    expect(s.col).toBe(0)
+    expect(s.errors).toBe(0)
+  })
+
+  it('moves to the next line with errors left, and Backspace stays on the current line', () => {
+    let s = real(['ab', 'c'], ['a', 'x'])
+    expect(s.line).toBe(1)
+    s = pressKey(s, 'Backspace', 5000)
+    expect(s.line).toBe(1)
+    expect(s.typed).toEqual(['ax', ''])
+    s = pressKey(s, 'c', 6000)
+    expect(isFinished(s)).toBe(true)
+    expect(uncorrectedErrors(s)).toBe(1)
+  })
+
+  it('weighs unfixed errors extra in the result', () => {
+    const fixed = computeResult(real(['ab'], ['x', 'Backspace', 'a', 'b']))
+    const unfixed = computeResult(real(['ab'], ['x', 'b']))
+    expect(fixed.errors).toBe(1)
+    expect(fixed.uncorrected).toBe(0)
+    expect(unfixed.uncorrected).toBe(1)
+    expect(unfixed.errors).toBe(UNCORRECTED_ERROR_WEIGHT)
+    expect(unfixed.correct).toBe(1)
+    expect(unfixed.accuracy).toBeLessThan(fixed.accuracy)
+  })
+
+  it('ignores Backspace at the start and other non-character keys', () => {
+    const s = real(['d'], ['Backspace', 'Shift', 'Dead'])
+    expect(s.startedAt).toBeNull()
+    expect(s.col).toBe(0)
   })
 })

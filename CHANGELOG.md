@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 – 2026-10-24
+
+- **Lyntaster has two modes.** **Træning** works as before: a wrong key doesn't move the cursor, and you hear a beep. **Rigtig skrivning** works like real typing: everything you type is written, wrong characters turn red, and you fix them with ⌫ (Backspace). A mistake you don't fix counts three times. The result screen says whether you fixed them all.
+- **Each mode has its own leaderboard.** Existing scores stay in Træning. The app remembers the mode you picked last.
+- **Two new texts for adults** (LIX 46–48, like a newspaper): "Bierne flytter ind i byen", an article in Danish, and "The Zebra Quartet" in English, full of z, q, x, w and c.
+
 ## 0.3.1 – 2026-10-21
 
 Tests and progress, redesigned with help from a UX designer, a behavioural-design expert and a kid panel.
