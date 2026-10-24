@@ -129,15 +129,33 @@ describe('real writing mode', () => {
     expect(s.errors).toBe(0)
   })
 
-  it('moves to the next line with errors left, and Backspace stays on the current line', () => {
-    let s = real(['ab', 'c'], ['a', 'x'])
-    expect(s.line).toBe(1)
-    s = pressKey(s, 'Backspace', 5000)
-    expect(s.line).toBe(1)
-    expect(s.typed).toEqual(['ax', ''])
-    s = pressKey(s, 'c', 6000)
+  it('moves to the next line with errors left', () => {
+    const s = real(['ab', 'c'], ['a', 'x', 'c'])
     expect(isFinished(s)).toBe(true)
     expect(uncorrectedErrors(s)).toBe(1)
+  })
+
+  it('goes back to the line before with Backspace to fix an error there', () => {
+    let s = real(['ab', 'cd'], ['a', 'x', 'c'])
+    s = pressKey(s, 'Backspace', 5000)
+    expect([s.line, s.col]).toEqual([1, 0])
+    s = pressKey(s, 'Backspace', 6000)
+    expect([s.line, s.col]).toEqual([0, 1])
+    expect(s.typed).toEqual(['a', ''])
+    expect(s.correct).toBe(1)
+    for (const k of ['b', 'c', 'd']) s = pressKey(s, k, 7000)
+    expect(isFinished(s)).toBe(true)
+    expect(uncorrectedErrors(s)).toBe(0)
+    expect(s.correct).toBe(4)
+    expect(s.errors).toBe(1)
+  })
+
+  it('can go back several lines', () => {
+    let s = real(['a', 'b', 'c'], ['a', 'b'])
+    expect(s.line).toBe(2)
+    for (let i = 0; i < 2; i++) s = pressKey(s, 'Backspace', 5000)
+    expect([s.line, s.col]).toEqual([0, 0])
+    expect(s.correct).toBe(0)
   })
 
   it('weighs unfixed errors extra in the result', () => {

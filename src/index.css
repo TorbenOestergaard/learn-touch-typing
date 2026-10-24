@@ -384,6 +384,10 @@ legend {
   font-family: var(--mono);
   font-size: clamp(1.1rem, 3.2vw, 1.85rem);
   overflow-x: auto;
+  /* No text selection while typing: a stray drag or double-click would select text, and Edge then shows
+     its mini menu with a search box (a guess at a popup reported on Windows + Edge in 0.3.2). */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .ex-line {

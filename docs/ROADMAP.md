@@ -168,7 +168,7 @@ harder, realistic texts to compete on.
   - The "no live stats while typing" rule still holds; the red fill only marks the characters.
 - **Engine** (`src/engine/session.ts`): add a `mode: 'strict' | 'real'` to the session (default `'strict'`, so exercises and tests are unchanged).
   - In `real` mode, keep the typed text per line, handle `Backspace`, and track which positions are wrong.
-  - Suggested rules (confirm with the user, see questions): a line advances once as many characters as the line has are typed; Backspace works within the current line only; the text finishes when the last line is typed.
+  - Suggested rules (confirm with the user, see questions): a line advances once as many characters as the line has are typed; Backspace works within the current line only (changed in 0.3.3: it can go back to earlier lines); the text finishes when the last line is typed.
   - Stats: `errors` counts every wrong key press, also ones later fixed, so accuracy = correct / (correct + errors) as today. Uncorrected wrong characters at the end also count as errors and never as correct. Backspace presses don't count as keystrokes for speed. Points stay speed × accuracy².
   - `errorsByChar` and the hardest-keys list work in both modes.
 - **Highscores per mode:**
@@ -203,7 +203,11 @@ harder, realistic texts to compete on.
 - **UI:** a "Måde" radio row under the length in `StoryPicker`, with a one-line hint. The leaderboard heading names the mode. `TypingArea` takes `mode`: Backspace is forwarded, there's no beep or flash, and `.wrong` gets a red fill (`--wrong-bg`/`--wrong-text`, also in dark mode) in both the text and the input row.
 - **Texts:** `bier` (Danish newspaper style, LIX 46) and `zebra` (English, LIX 48, at least 5 of each of z q x w c, checked by a test). The Danish layout has no `'` key, so the English text has no apostrophes. Neither text quotes real people or gives real figures.
 - **Testing tip:** the browser tool's `type` action doesn't fire `keydown` here. Dispatch `KeyboardEvent('keydown')` on `window` from `javascript_tool` instead.
-- **Left out:** Rigtig skrivning for module tests; moving back to the previous line with Backspace.
+- **Left out:** Rigtig skrivning for module tests.
+
+**Follow-up (0.3.3):**
+- **Backspace across lines:** in Rigtig skrivning, Backspace at the start of a line goes back to the end of the line before. That line's last character is removed, and you can go back as far as you like. Before, a mistake at the end of a line couldn't be fixed once the cursor had moved on.
+- **Edge on Windows:** a tester saw a popup that looked like a search bar after typing a few letters, in every test. It couldn't be reproduced, and the cause is unknown. One guess: Edge shows a mini menu with a search box when text is selected, so `.exercise` now has `user-select: none`. If it happens again, get a screenshot, the Edge version and whether it also happens in an InPrivate window with extensions turned off.
 
 ## M3 – Profile PINs (0.4.0)
 

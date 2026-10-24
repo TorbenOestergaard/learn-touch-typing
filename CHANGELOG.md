@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3 – 2026-10-24
+
+- **Rigtig skrivning: Backspace can go back to the line before.** If the cursor had already moved on to the next line, you couldn't fix a mistake at the end of the line above. Now Backspace goes back as far as you need.
+- Text in the typing area can no longer be selected, which may have caused a popup with a search box in Edge on Windows.
+
 ## 0.3.2 – 2026-10-24
 
 - **Lyntaster has two modes.** **Træning** works as before: a wrong key doesn't move the cursor, and you hear a beep. **Rigtig skrivning** works like real typing: everything you type is written, wrong characters turn red, and you fix them with ⌫ (Backspace). A mistake you don't fix counts three times. The result screen says whether you fixed them all.

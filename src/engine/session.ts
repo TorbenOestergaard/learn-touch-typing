@@ -116,21 +116,23 @@ export function pressKey(s: SessionState, key: string, now: number): SessionStat
 }
 
 /**
- * 'real' mode: wrong characters are written too. A line moves on once it is fully typed, errors or not;
- * Backspace only works within the current line. `correct` counts the correct characters in the text as it
- * stands, so deleting a correct character takes it back off.
+ * 'real' mode: wrong characters are written too. A line moves on once it is fully typed, errors or not.
+ * Backspace at the start of a line goes back to the end of the line before. `correct` counts the correct
+ * characters in the text as it stands, so deleting a correct character takes it back off.
  */
 function pressKeyReal(s: SessionState, key: string, now: number): SessionState {
   const line = s.lines[s.line]
-  const typed = s.typed[s.line]
 
   if (key === 'Backspace') {
-    if (typed.length === 0) return s
+    const at = s.col > 0 ? s.line : s.line - 1
+    if (at < 0) return s
+    const typed = s.typed[at]
     const removed = typed.length - 1
-    const wasCorrect = typed[removed] === line[removed]
+    const wasCorrect = typed[removed] === s.lines[at][removed]
     return {
       ...s,
-      typed: s.typed.map((t, i) => (i === s.line ? t.slice(0, -1) : t)),
+      typed: s.typed.map((t, i) => (i === at ? t.slice(0, -1) : t)),
+      line: at,
       col: removed,
       correct: s.correct - (wasCorrect ? 1 : 0),
     }
