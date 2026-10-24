@@ -219,6 +219,20 @@ export const da = {
   lengths: { 1: 'Kort (¼)', 2: 'Mellem (½)', 3: 'Hele' },
   start: 'Start',
   leaderboard: 'Topliste',
+  leaderboardFor: (mode: string) => `Topliste · ${mode}`,
+  storyMode: 'Måde',
+  storyModes: {
+    strict: {
+      name: 'Træning',
+      hint: 'En forkert tast flytter ikke markøren, og du hører et bip.',
+    },
+    real: {
+      name: 'Rigtig skrivning',
+      hint: 'Alt, du taster, bliver skrevet. Fejl bliver røde – ret dem med ⌫ (slet). En fejl, du ikke retter, tæller tre gange.',
+    },
+  },
+  allFixed: 'Du rettede alle dine fejl. Godt gået!',
+  uncorrectedLeft: (n: number) => (n === 1 ? 'Du lod 1 fejl stå. Den tæller tre gange.' : `Du lod ${n} fejl stå. De tæller tre gange.`),
   noScores: 'Ingen har prøvet endnu. Bliv den første!',
   points: 'point',
   pointsExplained: 'Point = hastighed × præcision × præcision. Fejl koster altså dobbelt.',

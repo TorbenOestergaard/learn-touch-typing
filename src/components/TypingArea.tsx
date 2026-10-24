@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createSession, expectedChar, isFinished, pressKey, type SessionState } from '../engine/session'
+import {
+  createSession,
+  expectedChar,
+  isFinished,
+  pressKey,
+  wrongPositions,
+  type SessionState,
+  type TypingMode,
+} from '../engine/session'
 import { computeResult, type SessionResult } from '../engine/stats'
 import { da } from '../i18n/da'
 import { errorBeep } from '../sound'
@@ -16,6 +24,8 @@ interface Props {
   onToggleSound: () => void
   /** Smaller text and auto-scroll, for long texts like stories. */
   compact?: boolean
+  /** 'real': wrong keys are written, shown with a red fill and fixed with Backspace. No beep. */
+  mode?: TypingMode
   onDone: (result: SessionResult) => void
   onExit: () => void
 }
@@ -29,20 +39,21 @@ export function TypingArea({
   sound,
   onToggleSound,
   compact = false,
+  mode = 'strict',
   onDone,
   onExit,
 }: Props) {
   // Every line but the last ends with a space, like the end of a word in running text.
   const padded = useMemo(() => lines.map((l, i) => (i < lines.length - 1 ? `${l} ` : l)), [lines])
-  const [session, setSession] = useState<SessionState>(() => createSession(padded))
+  const [session, setSession] = useState<SessionState>(() => createSession(padded, mode))
   const [showKeyboard, setShowKeyboard] = useState(true)
   const doneRef = useRef(false)
   const currentLineRef = useRef<HTMLDivElement>(null)
 
   const restart = useCallback(() => {
     doneRef.current = false
-    setSession(createSession(padded))
-  }, [padded])
+    setSession(createSession(padded, mode))
+  }, [padded, mode])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -53,17 +64,17 @@ export function TypingArea({
         return
       }
       // Keep space from scrolling and keys from triggering buttons or quick-find.
-      if (e.key.length === 1) e.preventDefault()
+      if (e.key.length === 1 || (mode === 'real' && e.key === 'Backspace')) e.preventDefault()
       if (e.repeat) return
       setSession((s) => pressKey(s, e.key, performance.now()))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [restart])
+  }, [restart, mode])
 
   useEffect(() => {
-    if (sound && session.errorTick > 0) errorBeep()
-  }, [session.errorTick, sound])
+    if (sound && mode === 'strict' && session.errorTick > 0) errorBeep()
+  }, [session.errorTick, sound, mode])
 
   useEffect(() => {
     if (compact) currentLineRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -77,6 +88,7 @@ export function TypingArea({
   }, [session, onDone])
 
   const next = expectedChar(session)
+  const real = mode === 'real'
 
   return (
     <div className="typing-screen">
@@ -105,6 +117,7 @@ export function TypingArea({
         {session.lines.map((line, i) => {
           const typed = i < session.line ? line.length : i === session.line ? session.col : 0
           const isCurrent = i === session.line && !isFinished(session)
+          const wrong = real ? new Set(wrongPositions(session, i)) : null
           return (
             <div
               className={`ex-line ${i < session.line ? 'done' : ''}`}
@@ -121,8 +134,9 @@ export function TypingArea({
                       key={cur ? `c${session.errorTick}` : j}
                       className={[
                         j < typed ? 'typed' : '',
+                        wrong?.has(j) ? 'wrong' : '',
                         cur ? 'current' : '',
-                        cur && session.errorTick > 0 ? 'flash' : '',
+                        cur && !real && session.errorTick > 0 ? 'flash' : '',
                         eol ? 'eol' : '',
                       ].join(' ')}
                     >
@@ -132,7 +146,13 @@ export function TypingArea({
                 })}
               </div>
               <div className="ex-input">
-                {line.slice(0, typed)}
+                {wrong
+                  ? [...session.typed[i]].map((ch, j) => (
+                      <span key={j} className={wrong.has(j) ? 'wrong' : undefined}>
+                        {ch}
+                      </span>
+                    ))
+                  : line.slice(0, typed)}
                 {isCurrent && <span className="cursor">_</span>}
               </div>
             </div>

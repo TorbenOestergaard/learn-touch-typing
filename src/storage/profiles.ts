@@ -9,6 +9,7 @@ import {
   type Thresholds,
 } from '../config'
 import { MODULES } from '../content/da/modules'
+import type { TypingMode } from '../engine/session'
 import type { SessionResult } from '../engine/stats'
 import type { SpeedUnit } from '../format'
 
@@ -43,8 +44,15 @@ export interface Profile {
   /** Lifetime errors per character, for warm-ups. */
   keyErrors: Record<string, number>
   /** Added after v1 launched, so optional. */
-  prefs?: { sound?: boolean; speedUnit?: SpeedUnit; dailyGoalMinutes?: number; chartMode?: ChartMode }
-  /** Best story result per storyKey(id, part). */
+  prefs?: {
+    sound?: boolean
+    speedUnit?: SpeedUnit
+    dailyGoalMinutes?: number
+    chartMode?: ChartMode
+    /** The last Lyntaster mode picked (since 0.3.2). */
+    storyMode?: TypingMode
+  }
+  /** Best story result per storyKey(id, part, mode). */
   storyBest?: Record<string, StoryRecord>
   /** Every finished attempt, oldest first. Basis for streaks, progress graphs and leaderboards. */
   history?: Attempt[]
@@ -64,6 +72,8 @@ export interface Attempt {
   /** 0-based exercise index, for kind 'exercise'. */
   ex?: number
   storyKey?: string
+  /** Stories since 0.3.2. Missing means 'strict'. */
+  storyMode?: TypingMode
   kpm: number
   accuracy: number
   durationMs: number
@@ -218,6 +228,7 @@ export function totalStars(profile: Profile): number {
 }
 
 export const soundOn = (p: Profile) => p.prefs?.sound ?? true
+export const storyModeOf = (p: Profile): TypingMode => p.prefs?.storyMode ?? 'strict'
 export const speedUnitOf = (p: Profile): SpeedUnit => p.prefs?.speedUnit ?? 'kpm'
 /** Minutes of typing per day to aim for. 0 hides the goal. */
 export const dailyGoalOf = (p: Profile): number => p.prefs?.dailyGoalMinutes ?? DAILY_GOAL_MINUTES
@@ -259,7 +270,7 @@ export function leaderboard(profiles: Profile[], key: string): { profile: Profil
 export function logAttempt(
   profile: Profile,
   result: SessionResult,
-  attempt: Pick<Attempt, 'kind' | 'moduleId' | 'ex' | 'storyKey' | 'stars' | 'points'>,
+  attempt: Pick<Attempt, 'kind' | 'moduleId' | 'ex' | 'storyKey' | 'storyMode' | 'stars' | 'points'>,
   at = Date.now(),
 ): Profile {
   const entry: Attempt = {

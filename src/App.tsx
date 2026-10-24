@@ -18,6 +18,7 @@ import {
   generateWarmup,
   wrapText,
 } from './content/generator'
+import type { TypingMode } from './engine/session'
 import { starsFor, weakKeys, type SessionResult } from './engine/stats'
 import { da } from './i18n/da'
 import { newlyUnlocked, type Achievement } from './progress/achievements'
@@ -51,11 +52,12 @@ type Screen =
   | { name: 'tests' }
   | { name: 'parents' }
   | { name: 'stories'; storyId?: string; part?: StoryLength }
-  | { name: 'story-typing'; storyId: string; part: StoryLength; seed: number }
+  | { name: 'story-typing'; storyId: string; part: StoryLength; mode: TypingMode; seed: number }
   | {
       name: 'story-result'
       storyId: string
       part: StoryLength
+      mode: TypingMode
       result: SessionResult
       points: number
       isRecord: boolean
@@ -127,15 +129,21 @@ export default function App() {
   const onStoryDone = useCallback(
     (result: SessionResult) => {
       if (!storyTyping || !profile) return
-      const { storyId, part } = storyTyping
-      const key = storyKey(storyId, part)
+      const { storyId, part, mode } = storyTyping
+      const key = storyKey(storyId, part, mode)
       const recorded = recordStory(profile, key, result)
-      const updated = logAttempt(recorded.profile, result, { kind: 'story', storyKey: key, points: recorded.points })
+      const updated = logAttempt(recorded.profile, result, {
+        kind: 'story',
+        storyKey: key,
+        storyMode: mode,
+        points: recorded.points,
+      })
       updateProfile(profile.id, () => updated)
       setScreen({
         name: 'story-result',
         storyId,
         part,
+        mode,
         result,
         points: recorded.points,
         isRecord: recorded.isRecord,
@@ -310,7 +318,10 @@ export default function App() {
           profiles={store.profiles}
           profile={profile}
           initial={screen.storyId && screen.part ? { storyId: screen.storyId, part: screen.part } : undefined}
-          onStart={(storyId, part) => setScreen({ name: 'story-typing', storyId, part, seed: newSeed() })}
+          onStart={(storyId, part, mode) => {
+            updateProfile(profile.id, (p) => ({ ...p, prefs: { ...p.prefs, storyMode: mode } }))
+            setScreen({ name: 'story-typing', storyId, part, mode, seed: newSeed() })
+          }}
           onBack={() => setScreen({ name: 'home' })}
         />
       </main>
@@ -324,8 +335,9 @@ export default function App() {
         <TypingArea
           key={screen.seed}
           title={`${story.emoji} ${story.title}`}
-          subtitle={`${story.genre} · ${da.lengths[screen.part]}`}
+          subtitle={`${story.genre} · ${da.lengths[screen.part]} · ${da.storyModes[screen.mode].name}`}
           lines={lines}
+          mode={screen.mode}
           known={ALL_KEYS}
           keyboardAvailable={false}
           sound={soundOn(profile)}
@@ -339,7 +351,7 @@ export default function App() {
   }
 
   if (screen.name === 'story-result') {
-    const { storyId, part } = screen
+    const { storyId, part, mode } = screen
     return (
       <main>
         <StoryResult
@@ -347,11 +359,12 @@ export default function App() {
           profile={profile}
           storyId={storyId}
           part={part}
+          mode={mode}
           result={screen.result}
           points={screen.points}
           isRecord={screen.isRecord}
           unlocked={screen.unlocked}
-          onRetry={() => setScreen({ name: 'story-typing', storyId, part, seed: newSeed() })}
+          onRetry={() => setScreen({ name: 'story-typing', storyId, part, mode, seed: newSeed() })}
           onOther={() => setScreen({ name: 'stories', storyId, part })}
           onHome={() => setScreen({ name: 'home' })}
         />

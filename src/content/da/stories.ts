@@ -1,6 +1,8 @@
 // Texts for the speed competition (Lyntaster). Each is about 200 words. The first three use only keys
-// from the learning path: letters, capitals, space, comma, full stop and hyphen. The adult text also
-// uses ? ! " and : (Shift + +, 1, 2 and .).
+// from the learning path: letters, capitals, space, comma, full stop and hyphen. The adult texts may also
+// use ? ! " and : (Shift + +, 1, 2 and .), and aim for LIX 40–50 like newspapers.
+
+import type { TypingMode } from '../../engine/session'
 
 export interface Story {
   id: string
@@ -44,6 +46,25 @@ export const STORIES: Story[] = [
     // and adapted to the keys above, so it is not a word-for-word quote of Foersom.
     text: `Hamlet træder frem og siger stille: "At være eller ikke være, det er spørgsmålet: om det er ædlere for sindet at tåle den vrede skæbnes pile og slyngestene, eller at gribe våben mod et hav af plager og ende dem ved modstand? At dø, at sove, ikke mere, og med en søvn at sige, at vi ender hjertets kval og de tusinde naturlige stød, som kødet er arving til. Det er en fuldendelse, man inderligt må ønske. At dø, at sove! At sove, måske at drømme! Ja, der er knuden. For hvilke drømme der kan komme i dødens søvn, når vi har rystet dette jordiske hylster af os, det må få os til at standse. Det er den tanke, der gør ulykken så langlivet. For hvem ville tåle tidens svøbe og spot, den stærkes uret, den stoltes hån, den forsmåede kærligheds smerte, lovens nølen, embedets frækhed og de spark, som den tålmodige fortjeneste får af de uværdige, når han selv kunne finde sin fred med en blank dolk? Hvem ville bære byrderne og stønne og svede under et trættende liv?"`,
   },
+  {
+    id: 'bier',
+    title: 'Bierne flytter ind i byen',
+    genre: 'Avisartikel · for voksne',
+    emoji: '🐝',
+    adults: true,
+    // Written for the app (0.3.2): newspaper style, LIX 40–50.
+    text: `Flere danske kommuner har i de seneste år forvandlet græsplæner, vejkanter og flade tage til blomstrende levesteder for vilde bier. Initiativet skyldes blandt andet, at antallet af insekter er faldet markant i store dele af Europa, hvilket bekymrer både biologer, landmænd og almindelige haveejere. Bierne bestøver nemlig en betydelig del af de afgrøder, vi spiser, og uden dem ville frugt, grøntsager og nødder blive langt dyrere. Mange steder har kommunerne derfor sået lange vejrabatter til med hjemmehørende blomster, som kun bliver slået en enkelt gang om året. Ifølge flere biologer har resultatet overrasket selv de mest optimistiske medarbejdere: Man registrerer nu arter, som ingen havde set i byerne i årtier. Kritikere påpeger dog, at de vilde arealer kan virke rodede, og at nogle borgere savner de velklippede plæner. Derfor har flere kommuner valgt at sætte små skilte op, der forklarer formålet med projektet. Men hvad kan den enkelte borger egentlig gøre? Eksperterne understreger, at private haver spiller en afgørende rolle. Hvis blot en tiendedel af landets haveejere lod et hjørne gro vildt, ville det ifølge beregningerne skabe et sammenhængende netværk af levesteder. Spørgsmålet er derfor ikke længere, om byerne kan hjælpe bierne, men hvor hurtigt det kan ske.`,
+  },
+  {
+    id: 'zebra',
+    title: 'The Zebra Quartet',
+    genre: 'På engelsk · for voksne',
+    emoji: '🦓',
+    adults: true,
+    // Written for the app (0.3.2): English, with many of the letters that are rare in Danish (z, q, x, w, c).
+    // No apostrophes, since the Danish layout in src/layouts/da.ts has no ' key.
+    text: `Every summer, the old zoo on the hill organises an extraordinary jazz evening to raise money for its exotic animals. Visitors queue quietly outside the gates long before sunset, carrying baskets, blankets and boxes of expensive chocolate. This year, the organisers invited four experienced musicians who call themselves the Zebra Quartet, although nobody seems to know exactly why. The saxophonist is a cheerful woman with a quick wit and a bronze bracelet. She explained that the name was chosen during a lazy afternoon quiz in a crowded bar in Amsterdam. Her colleagues, a quiet pianist, a bassist with a fuzzy beard and a drummer, simply shrugged and laughed. When the music finally started, the crowd fell silent. Complex rhythms zigzagged between the cages, and even the sleepy jaguars lifted their heads to listen. A curious boy asked whether the zebras could dance, and his father answered that they probably preferred waltzes. Around midnight, the quartet played a final, exquisite improvisation that mixed jazz, folk music and something resembling a lullaby. Afterwards, the zoo director announced that the evening had raised enough money to expand the enclosure for the endangered oxen. Exhausted but satisfied, the visitors walked home beneath a sky full of quivering stars.`,
+  },
 ]
 
 export type StoryLength = 1 | 2 | 3
@@ -69,4 +90,6 @@ export function storyPart(text: string, part: StoryLength): string {
 // Bump when story texts or lengths change, so old scores don't mix with new ones.
 const STORY_SET = 2
 
-export const storyKey = (id: string, part: StoryLength) => `${id}:${part}:v${STORY_SET}`
+/** Leaderboard key. Each mode has its own list; 'strict' keeps the key from before 0.3.2. */
+export const storyKey = (id: string, part: StoryLength, mode: TypingMode = 'strict') =>
+  `${id}:${part}:v${STORY_SET}${mode === 'real' ? ':real' : ''}`
